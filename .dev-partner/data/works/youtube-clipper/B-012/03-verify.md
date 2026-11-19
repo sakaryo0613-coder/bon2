@@ -2,7 +2,7 @@
 
 - ローカル（Linux）: `python -m pytest -q tests` → **71 passed**（43件から28件増）
 - 本物の Twitch（下調べ・GitHub Actions の ubuntu）: [run 44576135531](https://github.com/sakaryo0613-coder/bon2/actions/runs/44576135531) → 情報・チャット・動画の冒頭を取得
-- Windows（GitHub Actions・windows-latest）: [run 44578578348](https://github.com/sakaryo0613-coder/bon2/actions/runs/44578578348) → __CI_RESULT__
+- Windows（GitHub Actions・windows-latest）: [run 44579022203](https://github.com/sakaryo0613-coder/bon2/actions/runs/44579022203) → **全工程 success**（head fadc0d0。その前の2回は push で取り消し）
 
 | # | 基準 | 結果 | 根拠 |
 |---|---|---|---|
@@ -14,8 +14,8 @@
 | AC6 | URL を貼る → 「候補を作る」の2操作で、段階が出てレビューへ。理由に「チャット ×N」 | ✅ | `test_url_job_api_flow`（確認→チャット→動画の順、出典は配信者名、chat_messages.json を保存）、`test_home_ui_url_flow`（Playwright: 2操作・段階の表示5つ・処理中は「候補を作る」が隠れ、進み具合がファーストビューに入る・レビューに「チャット ×8.0」） |
 | AC7 | 失敗の案内 | ✅ | 貼った時点でクリップ等は理由を表示し「候補を作る」は押せない（UI テスト）。チャットだけ失敗 → 「言葉だけで採点します」と出て完了。動画の失敗 → 「アーカイブが見つかりません…」の1文（`test_url_job_chat_failure_*`）。`test_explain_error_messages`（サブスク限定・404・接続・配信中） |
 | AC8 | 主要ボタンがファーストビュー、下端から48px以上（帯が出ていても） | ✅ | 1280×680・1024×680、更新の帯あり: 「候補を作る」の下の余白は URL を貼る前 81px・貼った後 57px。`shot.cjs --must-see "#pick,#start"` OK。足す前と後のスクショを並べて目視（L-014） |
-| AC9 | Windows のアプリ（同梱の yt-dlp）で本物の Twitch から取れる | __AC9__ | __AC9_DETAIL__ |
-| AC10 | 既存のテスト・自己テスト・インストール・更新のテスト | __AC10__ | __AC10_DETAIL__ |
+| AC9 | Windows のアプリ（同梱の yt-dlp）で本物の Twitch から取れる | ✅ | `clipper.exe --twitch-probe`（作ったアプリ・同梱の yt-dlp）: 配信中の最新アーカイブを飛ばして次を選び、情報（1時間43分）・チャット（冒頭10分で158件・時刻送り・1.2秒）・動画（冒頭20秒・7.2MB・2.1秒）を取得 |
+| AC10 | 既存のテスト・自己テスト・インストール・更新のテスト | ✅ | Windows の pytest 全件・自己テスト（文字起こしを含む）・サーバーの自動終了・インストール（ショートカットあり）→ 自己テスト → アンインストール・**古い版 0.3.0 からアプリ内の更新で 0.3.13 に上書きし、起動し直した（PID 1636）**。インストーラーは 173MB（yt-dlp の同梱で +5MB） |
 | AC11 | 実際のアーカイブで候補の質 | ⚠️ 未検証 | ユーザーの PC で「更新する」→ 自分のアーカイブで確認する |
 
 ## 途中で見つかって直したもの（LOG.md）
