@@ -222,7 +222,10 @@ def make_handler(app: App):
                     return self._json({"ok": True})
                 if u.path == "/api/pick":
                     kind = self._body().get("kind", "video")
-                    return self._json({"path": app.picker(kind)})
+                    try:
+                        return self._json({"path": app.picker(kind)})
+                    except Exception as e:   # 画面のない環境など。ドラッグ＆ドロップを案内する
+                        return self._json({"path": "", "error": f"ファイルを選ぶ画面を開けませんでした（{type(e).__name__}）。動画をこの枠にドラッグしてください。"})
                 if u.path == "/api/upload":
                     return self._upload(parse_qs(u.query).get("name", ["video.mp4"])[0])
                 if u.path == "/api/jobs":

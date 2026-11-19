@@ -137,8 +137,8 @@ function setVideo(p) {
 function setSubs(p) {
   S.subs = p; $('subs-val').textContent = p ? base(p) : 'なし（自動で文字起こし）'; $('clear-subs').hidden = !p;
 }
-$('pick').onclick = async () => { const r = await post('/api/pick', {kind: 'video'}); if (r.path) setVideo(r.path); };
-$('pick-subs').onclick = async () => { const r = await post('/api/pick', {kind: 'subs'}); if (r.path) setSubs(r.path); };
+$('pick').onclick = async () => { const r = await post('/api/pick', {kind: 'video'}); if (r.error) showErr(r.error); else if (r.path) { $('err').hidden = true; setVideo(r.path); } };
+$('pick-subs').onclick = async () => { const r = await post('/api/pick', {kind: 'subs'}); if (r.error) showErr(r.error); else if (r.path) setSubs(r.path); };
 $('clear-subs').onclick = () => setSubs('');
 
 // ドラッグ＆ドロップ（ブラウザからは元の場所が分からないため、作業用にコピーする）

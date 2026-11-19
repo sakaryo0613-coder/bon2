@@ -4,7 +4,7 @@ name: clipper-windows
 
 on:
   push:
-    branches: [main, "claude/**"]
+    branches: [main]   # 作業ブランチは PR の実行で確認する（同じ内容を2回実行しない）
     paths:
       - ".dev-partner/data/works/youtube-clipper/**"
       - ".github/workflows/clipper-windows.yml"

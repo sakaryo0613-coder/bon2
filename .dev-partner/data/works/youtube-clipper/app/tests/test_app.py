@@ -68,6 +68,19 @@ def test_job_api_flow(env, sample_video):
         srv.shutdown()
 
 
+def test_pick_failure_is_reported(env):
+    """ファイル選択画面を開けない環境でも、落ちずに案内を返す。"""
+    srv, app, port = start()
+    try:
+        def boom(kind):
+            raise RuntimeError("no display")
+        app.picker = boom
+        r = call(port, "/api/pick", {"kind": "video"})
+        assert r["path"] == "" and "ドラッグ" in r["error"]
+    finally:
+        srv.shutdown()
+
+
 def test_config_saves_api_key(env):
     srv, app, port = start()
     try:
