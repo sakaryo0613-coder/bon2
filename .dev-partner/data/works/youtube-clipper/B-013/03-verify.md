@@ -3,7 +3,7 @@
 - ローカル（Linux）: `python -m pytest -q tests` → **43 passed**（うち更新まわり `tests/test_updater.py` 7件）
 - Windows（GitHub Actions・windows-latest）:
   - PR: [run 44568963758](https://github.com/sakaryo0613-coder/bon2/actions/runs/44568963758) → 全工程 success（公開ジョブは PR なので skip）
-  - main: [run 44571857486](https://github.com/sakaryo0613-coder/bon2/actions/runs/44571857486) → __MAIN_RESULT__
+  - main: [run 44571857486](https://github.com/sakaryo0613-coder/bon2/actions/runs/44571857486) → 全工程 success（テスト・ビルドと確認・**Releases に公開**）
 
 | # | 基準 | 結果 | 根拠 |
 |---|---|---|---|
@@ -12,7 +12,7 @@
 | AC3 | ダウンロードが壊れていたら（sha256 の不一致・サイズ0）インストーラーを起動せず、理由を表示する | ✅ | `test_apply_rejects_broken_download`（2通り）: 起動されず、`.part` も残らず、理由が state に入る |
 | AC4 | ホームに今の版が表示される | ✅ | `test_update_banner_ui`: `v0.3.9` を表示。スクショを目視（1280×680・1024×680、`--must-see "#pick,#start"`） |
 | AC5 | Windows で古い版から新しい版にアプリ内の更新で上書きでき、更新後にアプリが自動で起動する | ✅ | PR の run: 0.3.0 を入れる → 擬似の Release を見せて `clipper.exe --update-now`（終了コード 0）→ `_version.json` が **0.3.9** に → **clipper.exe が起動し直した（PID 8364）**。所要は約40秒 |
-| AC6 | main への反映で Release が作られ、ログインなしで `clipper-setup.exe` をダウンロードできる | __AC6__ | __AC6_DETAIL__ |
+| AC6 | main への反映で Release が作られ、ログインなしで `clipper-setup.exe` をダウンロードできる | ✅ | Release **`clipper-v0.3.10`** が「最新」として公開された（176,062,909 バイト、GitHub が sha256 を付与）。この環境（GitHub にログインしていない）から `releases/latest/download/clipper-setup.exe` と版ごとの URL の両方を取得できた。さらに、アプリの更新処理そのもの（`Updater`）を本物の GitHub API に向けて「0.3.9 のアプリ」として動かし、`0.3.10` を新しい版と判定 → 全体をダウンロード → 大きさと sha256 が一致、を確認。「0.3.10 のアプリ」では更新を出さない |
 
 ## 途中で見つかって直したもの（LOG.md）
 - 帯を足したら、画面全体の grid が2行のままで帯が縦に引き伸ばされ、「候補を作る」が下端まで押し出された。`--must-see` は OK だった → grid を3行に。あわせて shot.cjs に下端の余白の確認を追加（完了後①）
