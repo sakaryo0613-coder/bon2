@@ -1,0 +1,163 @@
+# clipper（YouTube切り抜きツール）の Windows 向けテストとアプリ作成。
+# 店舗サイトとは無関係で、.dev-partner/data/works/youtube-clipper/ が変わったときだけ動く。
+name: clipper-windows
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - ".dev-partner/data/works/youtube-clipper/**"
+      - ".github/workflows/clipper-windows.yml"
+  pull_request:
+    paths:
+      - ".dev-partner/data/works/youtube-clipper/**"
+      - ".github/workflows/clipper-windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clipper-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: pwsh
+    working-directory: .dev-partner/data/works/youtube-clipper/app
+
+env:
+  PYTHONUTF8: "1"
+  FFMPEG_URL: https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip
+
+jobs:
+  test:
+    name: テスト（Windows 上で既存のテストを実行・AC7）
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: ffmpeg を用意
+        run: |
+          Invoke-WebRequest $env:FFMPEG_URL -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffx
+          $bin = (Get-ChildItem ffx -Recurse -Filter ffmpeg.exe | Select-Object -First 1).DirectoryName
+          New-Item -ItemType Directory -Force build/ffmpeg | Out-Null
+          Copy-Item "$bin/ffmpeg.exe", "$bin/ffprobe.exe" build/ffmpeg/
+          (Resolve-Path build/ffmpeg).Path | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+      - name: 依存ライブラリ
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest
+          npm install -g playwright@1
+          npx playwright install chromium
+          "NODE_PATH=$(npm root -g)" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+      - name: テスト
+        run: |
+          ffmpeg -version | Select-Object -First 1
+          python -m pytest -q tests
+      - name: 画面のスクショを保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screens
+          path: .dev-partner/data/works/youtube-clipper/samples/.gen/*.png
+          if-no-files-found: ignore
+
+  build:
+    name: アプリとインストーラーを作って Windows で確認（AC8〜AC10）
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      CLIPPER_LOCAL_DIR: ${{ github.workspace }}\clipper-local
+      CLIPPER_HOME: ${{ github.workspace }}\clipper-home
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: ffmpeg を用意（アプリに同梱する）
+        run: |
+          Invoke-WebRequest $env:FFMPEG_URL -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffx
+          $bin = (Get-ChildItem ffx -Recurse -Filter ffmpeg.exe | Select-Object -First 1).DirectoryName
+          New-Item -ItemType Directory -Force build/ffmpeg | Out-Null
+          Copy-Item "$bin/ffmpeg.exe", "$bin/ffprobe.exe" build/ffmpeg/
+          # 同梱物だけで動くことを確かめるため、PATH には入れない
+      - name: 依存ライブラリ
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
+      - name: アプリを作る（PyInstaller）
+        run: |
+          pyinstaller --noconfirm packaging/clipper.spec --distpath dist --workpath build/pyi
+          "{0:N0} MB" -f ((Get-ChildItem dist/clipper -Recurse | Measure-Object Length -Sum).Sum / 1MB)
+      - name: 確認用の英語音声を作る（Windows の音声合成）
+        id: speech
+        continue-on-error: true
+        run: |
+          Add-Type -AssemblyName System.Speech
+          $s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+          $s.GetInstalledVoices() | ForEach-Object { $_.VoiceInfo.Name }
+          $s.SetOutputToWaveFile("$PWD\speech.wav")
+          $s.Speak("Hello. This is a test of the clipper transcription. The quick brown fox jumps over the lazy dog.")
+          $s.Dispose()
+          Get-Item speech.wav
+      - name: 作ったアプリの自己テスト（AC8・AC10）
+        run: |
+          $a = @('--selftest', "$PWD\st1")
+          if (Test-Path speech.wav) { $a += @('--speech', "$PWD\speech.wav") } else { Write-Host "音声がないため文字起こしの確認は省略" }
+          $p = Start-Process dist/clipper/clipper.exe -ArgumentList $a -Wait -PassThru
+          Get-Content st1/selftest.json -Encoding utf8
+          if ($p.ExitCode -ne 0) { Get-Content "$env:CLIPPER_LOCAL_DIR\clipper.log" -ErrorAction SilentlyContinue; exit 1 }
+      - name: 作ったアプリのサーバーと自動終了（AC6）
+        run: |
+          $p = Start-Process dist/clipper/clipper.exe -ArgumentList '--no-window', '--port', '8799', '--idle', '8' -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 30; $i++) { try { $r = Invoke-WebRequest http://127.0.0.1:8799/api/home -UseBasicParsing; if ($r.StatusCode -eq 200) { $ok = $true; break } } catch {}; Start-Sleep 1 }
+          if (-not $ok) { Write-Error "サーバーが起動しない"; exit 1 }
+          $home_ = Invoke-WebRequest http://127.0.0.1:8799/ -UseBasicParsing
+          if ($home_.Content -notmatch '新しい切り抜き') { Write-Error "ホーム画面が返らない"; exit 1 }
+          if (-not $p.WaitForExit(40000)) { Write-Error "画面からの通知がないのに終了しない"; $p.Kill(); exit 1 }
+          Write-Host "通知が途絶えて自動で終了した"
+      - name: インストーラーを作る（Inno Setup）
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc packaging\installer.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-Item dist/clipper-setup.exe | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB)}}
+      - name: インストール → 自己テスト → アンインストール（AC9）
+        run: |
+          $dir = "$env:RUNNER_TEMP\cliptest"
+          Start-Process dist/clipper-setup.exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$dir" -Wait
+          $lnk = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\clipper.lnk"
+          $desk = [Environment]::GetFolderPath('Desktop') + "\clipper.lnk"
+          Write-Host "スタートメニュー: $(Test-Path $lnk) / デスクトップ: $(Test-Path $desk)"
+          if (-not (Test-Path $lnk) -or -not (Test-Path $desk)) { Write-Error "ショートカットがない"; exit 1 }
+          $p = Start-Process "$dir\clipper.exe" -ArgumentList '--selftest', "$PWD\st2" -Wait -PassThru
+          Get-Content st2/selftest.json -Encoding utf8
+          if ($p.ExitCode -ne 0) { exit 1 }
+          Start-Process "$dir\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES' -Wait
+          Start-Sleep 3
+          if (Test-Path "$dir\clipper.exe") { Write-Error "アンインストールで消えない"; exit 1 }
+          Write-Host "アンインストールできた"
+      - name: インストーラーと確認結果を保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clipper-windows
+          path: |
+            .dev-partner/data/works/youtube-clipper/app/dist/clipper-setup.exe
+            .dev-partner/data/works/youtube-clipper/app/st1/selftest.json
+            .dev-partner/data/works/youtube-clipper/app/st1/selftest_frame.png
+            .dev-partner/data/works/youtube-clipper/app/st2/selftest.json
+          if-no-files-found: warn
+          retention-days: 30

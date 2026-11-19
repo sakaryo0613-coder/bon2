@@ -62,6 +62,21 @@ kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width
 .pill{font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap}
 .pill.accepted{background:var(--ok-bg);color:var(--ok)}.pill.rejected{background:var(--ng-bg);color:var(--ng)}.pill.pending{background:var(--bg);color:var(--sub)}
 .empty{color:var(--sub);text-align:center;padding:30px}
+.home{color:var(--sub);font-size:14px;text-decoration:none;white-space:nowrap}
+.home:hover{color:var(--accent)}
+#help{font-size:13px;padding:6px 10px}
+#openf{margin-top:6px;font-size:13px}
+/* ガイド: 暗幕(20) < 強調する要素(21) < 説明の箱(22)。.guide 自体は重なり順の基準を作らない */
+.guide[hidden]{display:none}
+.gback{position:fixed;inset:0;z-index:20;background:rgba(15,17,21,.55)}
+.gbox{position:fixed;z-index:22;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card);color:var(--ink);border-radius:16px;max-width:520px;width:calc(100% - 32px);padding:22px 24px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.gstep{font-size:13px;color:var(--accent);font-weight:700}
+.gbox h2{font-size:21px;margin:4px 0 10px}
+.gbox p{line-height:1.8}
+.gnav{display:flex;justify-content:space-between;margin-top:18px}
+.gnav .gmain{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;padding:8px 20px}
+.hl{position:relative;z-index:21;box-shadow:0 0 0 4px var(--accent);border-radius:10px}
+.hlp{z-index:21 !important}
 @media (max-width:900px){main{grid-template-columns:1fr;padding:12px 16px 40px}.panel{position:static}.hd{padding:10px 16px}.vt{flex-basis:100%;order:3}
 .prog{padding:0 16px 10px}}
 </style>
@@ -69,16 +84,27 @@ kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width
 <body>
 <header>
   <div class="hd">
+    <a class="home" href="/" title="ホームに戻る">← ホーム</a>
     <h1>切り抜きレビュー</h1>
     <div class="stats"><span id="st-p">未判断 0</span><span id="st-a">採用 0</span><span id="st-r">却下 0</span></div>
     <div class="vt" id="vt"></div>
+    <button id="help" title="使い方を表示">？ 使い方</button>
     <button id="go" disabled>採用した 0 本を書き出す</button>
   </div>
-  <div class="prog" id="prog"><div class="bar"><i id="pbar"></i></div><p id="ptext"></p></div>
+  <div class="prog" id="prog"><div class="bar"><i id="pbar"></i></div><p id="ptext"></p><button id="openf" hidden>📂 書き出したフォルダを開く</button></div>
 </header>
+<div class="guide" id="guide" hidden>
+  <div class="gback"></div>
+  <div class="gbox" role="dialog" aria-modal="true" aria-labelledby="g-title">
+    <p class="gstep" id="g-step">1 / 4</p>
+    <h2 id="g-title"></h2>
+    <p id="g-body"></p>
+    <div class="gnav"><button id="g-skip">閉じる</button><button id="g-next" class="gmain">次へ</button></div>
+  </div>
+</div>
 <main>
   <section class="panel">
-    <video id="v" src="/media/source" preload="metadata" controls playsinline></video>
+    <video id="v" preload="metadata" controls playsinline></video>
     <div class="det" id="det"><div class="empty">候補を選んでください</div></div>
   </section>
   <section>
@@ -90,15 +116,17 @@ kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width
   </section>
 </main>
 <script>
+const W = new URLSearchParams(location.search).get('w') || '';
+const API = '/api/w/' + encodeURIComponent(W);
 const S = {clips: [], sents: [], meta: {}, limits: {min: 20, max: 60}, sel: null, filter: 'all'};
 const $ = id => document.getElementById(id);
-const v = $('v');
+const v = $('v'); v.src = '/media/w/' + encodeURIComponent(W) + '/source';
 const fmt = t => { t = Math.max(0, t); const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${m}:${String(s).padStart(2, '0')}`; };
 const STATUS = {pending: '未判断', accepted: '採用', rejected: '却下'};
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 
 async function load() {
-  const st = await (await fetch('/api/state')).json();
+  const st = await (await fetch(API + '/state')).json();
   Object.assign(S, {clips: st.clips, sents: st.sentences, meta: st.meta, limits: st.limits});
   $('vt').textContent = `${st.meta.title || ''}（${fmt(st.meta.duration || 0)}）・候補 ${st.clips.length}`;
   if (!S.sel && S.clips.length) S.sel = S.clips[0].id;
@@ -152,7 +180,7 @@ function select(id, seek = true) {
 
 async function patch(body) {
   const c = cur();
-  const r = await (await fetch('/api/decision', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: c.id, ...body})})).json();
+  const r = await (await fetch(API + '/decision', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: c.id, ...body})})).json();
   const before = c.duration;
   Object.assign(c, r);
   if ((body.start_sid !== undefined || body.end_sid !== undefined) && r.duration === before) {
@@ -179,7 +207,7 @@ v.addEventListener('timeupdate', () => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || !$('guide').hidden) return;
   const idx = S.clips.findIndex(c => c.id === S.sel);
   if (e.key === 'a' || e.key === 'A') decide('accepted');
   else if (e.key === 'x' || e.key === 'X') decide('rejected');
@@ -191,20 +219,61 @@ $('tabs').onclick = e => { const f = e.target.dataset.f; if (!f) return; S.filte
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.f === f)); render(); };
 
 $('go').onclick = async () => {
-  const r = await (await fetch('/api/render', {method: 'POST'})).json();
+  const r = await (await fetch(API + '/render', {method: 'POST'})).json();
   if (!r.ok) { alert(r.error || '書き出しを開始できませんでした'); return; }
   poll();
 };
 async function poll() {
   $('prog').classList.add('on'); $('go').disabled = true;
-  const p = await (await fetch('/api/render')).json();
+  const p = await (await fetch(API + '/render')).json();
   $('pbar').style.width = (p.total ? 100 * p.done / p.total : 0) + '%';
   if (p.error) { $('ptext').textContent = 'エラー: ' + p.error; render(); return; }
   if (p.running) { $('ptext').textContent = `書き出し中 ${p.done}/${p.total}：${p.current}`; setTimeout(poll, 1000); return; }
-  $('ptext').textContent = `完了：${p.files.length} 本を out/ に書き出しました（${p.files.join('、')}）。説明文の下書きは out/clips.csv にあります。`;
+  $('ptext').textContent = `完了：${p.files.length} 本を書き出しました（${p.files.join('、')}）。説明文の下書きは同じフォルダの clips.csv にあります。`;
+  $('openf').hidden = false;
   render();
 }
-load();
+$('openf').onclick = () => fetch('/api/open', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({w: W})});
+
+// 初回ガイド（4ステップ）。表示済みかどうかはブラウザに保存する
+const GUIDE = [
+  ['右の候補をクリック', 'AIが動画全体から、ショートに使えそうな区間を選んで右に並べています。クリックすると左に表示され、下に話している内容が出ます。', '.list'],
+  ['「▶ 再生」で中身を確認', 'その区間だけを再生し、終わりで止まります。キーボードの Space でも再生できます。', '#pl'],
+  ['「採用」か「却下」を押す', '押すと次の未判断の候補に進みます（キーボードの A / X でも可）。区間がずれていたら「＋前の文」「−末尾の文」などで1文ずつ伸縮、タイトルは上の欄で直せます。', '.act'],
+  ['「採用した N 本を書き出す」', '採用したものが縦型のショート動画（1080×1920・字幕つき）として保存されます。終わったら「書き出したフォルダを開く」で確認できます。', '#go'],
+];
+let gi = 0;
+function showGuide(i) {
+  gi = i; const [title, body, sel] = GUIDE[i];
+  $('guide').hidden = false; $('g-step').textContent = `${i + 1} / ${GUIDE.length}`;
+  $('g-title').textContent = title; $('g-body').textContent = body;
+  $('g-next').textContent = i === GUIDE.length - 1 ? 'はじめる' : '次へ';
+  document.querySelectorAll('.hl,.hlp').forEach(e => e.classList.remove('hl', 'hlp'));
+  const el = document.querySelector(sel);
+  if (el) {   // 強調する要素と、その祖先（sticky のヘッダーやパネル）を暗幕より前に出す
+    el.classList.add('hl');
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) a.classList.add('hlp');
+    el.scrollIntoView({block: 'nearest'});
+  }
+  // 説明の箱は、強調している要素と反対側に置く（重ならないように）
+  const box = document.querySelector('.gbox'); const r = el ? el.getBoundingClientRect() : null;
+  const right = r && (r.left + r.right) / 2 < innerWidth / 2;
+  Object.assign(box.style, innerWidth < 900 ? {left: '50%', right: 'auto', transform: 'translateX(-50%)'}
+    : right ? {left: 'auto', right: '24px', transform: 'none'} : {left: '24px', right: 'auto', transform: 'none'});
+}
+function closeGuide() {
+  $('guide').hidden = true; document.querySelectorAll('.hl,.hlp').forEach(e => e.classList.remove('hl', 'hlp'));
+  try { localStorage.setItem('clipper.guide.v1', '1'); } catch (e) {}
+}
+$('g-next').onclick = () => gi < GUIDE.length - 1 ? showGuide(gi + 1) : closeGuide();
+$('g-skip').onclick = closeGuide;
+$('help').onclick = () => showGuide(0);
+document.addEventListener('keydown', e => { if (!$('guide').hidden && e.key === 'Escape') closeGuide(); }, true);
+let seen = false; try { seen = localStorage.getItem('clipper.guide.v1') === '1'; } catch (e) {}
+
+// 画面が開いていることをアプリに知らせる（閉じると1分ほどでアプリが終了する）
+setInterval(() => fetch('/api/ping', {method: 'POST'}).catch(() => {}), 10000);
+load().then(() => { if (!seen) showGuide(0); });
 </script>
 </body>
 </html>

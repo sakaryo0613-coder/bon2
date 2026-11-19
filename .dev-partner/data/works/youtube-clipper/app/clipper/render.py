@@ -15,11 +15,23 @@ BUNSETSU_END = "はがをにでとのもへやたてるいくしだらばどね�
 KINSOKU_HEAD = "、。，．・：；？！!?」』）)ーぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ…"
 
 
+BUNDLED_FONT = ("BIZ UDPGothic", "BIZUDPGothic-Bold.ttf")   # OFL。どの環境でも同じ見た目にするため同梱
+
+
+def bundled_font_file() -> Path | None:
+    from .paths import fonts_dir
+    f = fonts_dir() / BUNDLED_FONT[1]
+    return f if f.exists() else None
+
+
 def pick_font(override: str | None = None) -> str:
     if override:
         return override
+    if bundled_font_file():
+        return BUNDLED_FONT[0]
     if shutil.which("fc-list"):
-        out = subprocess.run(["fc-list", ":lang=ja", "family"], capture_output=True, text=True).stdout
+        out = subprocess.run(["fc-list", ":lang=ja", "family"], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace").stdout
         fams = {f.strip() for line in out.splitlines() for f in line.split(",")}
         for f in C.FONT_CANDIDATES:
             if f in fams:
@@ -133,7 +145,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
 
 def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
-    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0:
         raise RuntimeError("ffmpeg に失敗しました:\n" + " ".join(cmd) + "\n" + r.stderr[-2000:])
     return r
@@ -142,7 +154,7 @@ def _run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess
 def measure_loudness(src: Path, start: float, dur: float) -> dict | None:
     r = subprocess.run(["ffmpeg", "-hide_banner", "-ss", f"{start}", "-i", str(src), "-t", f"{dur}", "-vn",
                         "-af", f"loudnorm=I={C.LOUDNESS_I}:TP={C.LOUDNESS_TP}:LRA={C.LOUDNESS_LRA}:print_format=json",
-                        "-f", "null", "-"], capture_output=True, text=True)
+                        "-f", "null", "-"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     m = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", r.stderr, re.S)
     return json.loads(m.group(0)) if m else None
 
@@ -155,6 +167,12 @@ def render_clip(src: Path, clip: dict, sents: list[dict], out: Path, font: str |
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
         (td / "clip.ass").write_text(build_ass(clip, sents, font, credit, layout), encoding="utf-8")
+        sub = "subtitles=clip.ass"
+        ff = bundled_font_file()
+        if ff and font == BUNDLED_FONT[0]:   # 同梱フォントを一時フォルダに置き、相対パスで渡す（Windows のパスのエスケープを避ける）
+            (td / "fonts").mkdir()
+            shutil.copy(ff, td / "fonts" / ff.name)
+            sub += ":fontsdir=fonts"
         # 2パスのラウドネス正規化（1パス目で測定 → 2パス目で線形補正）
         m = measure_loudness(src, clip["start"], dur)
         if m and m.get("input_i") not in (None, "-inf"):
@@ -169,10 +187,10 @@ def render_clip(src: Path, clip: dict, sents: list[dict], out: Path, font: str |
                   f"[bg]drawbox=x=0:y={C.BAND_Y}:w={C.OUT_W}:h={C.BAND_H}:color=0x{band_color}:t=fill[bg2];"
                   f"[0:v]scale={C.OUT_W}:{C.VIDEO_H}:force_original_aspect_ratio=decrease,setsar=1,fps={C.OUT_FPS}[v];"
                   f"[bg2][v]overlay=x=(W-w)/2:y={C.VIDEO_Y}+({C.VIDEO_H}-h)/2:shortest=1[c];"
-                  f"[c]subtitles=clip.ass[out]")
+                  f"[c]{sub}[out]")
         else:  # crop: 中央を縦に切り出して全面表示（顔の位置は追わない）
             fc = (f"[0:v]scale=-2:{C.OUT_H},crop={C.OUT_W}:{C.OUT_H},setsar=1,fps={C.OUT_FPS}[v];"
-                  f"[v]subtitles=clip.ass[out]")
+                  f"[v]{sub}[out]")
         cmd = ["ffmpeg", "-hide_banner", "-y", "-ss", f"{clip['start']}", "-i", str(Path(src).resolve()), "-t", f"{dur}",
                "-filter_complex", fc, "-map", "[out]", "-map", "0:a?", "-af", af,
                "-c:v", "libx264", "-preset", "medium", "-crf", str(C.CRF), "-pix_fmt", "yuv420p", "-r", str(C.OUT_FPS),
