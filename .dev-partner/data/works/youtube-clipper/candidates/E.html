@@ -1,0 +1,45 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#fff;color:#1f2328}
+.top{height:56px;display:flex;align-items:center;padding:0 28px;border-bottom:1px solid #d0d7de;gap:14px}
+.top b{font-size:17px}.top span{color:#656d76;font-size:14px}
+.wrap{display:grid;grid-template-columns:1fr 420px;height:744px}
+.l{padding:22px 28px}
+.l h2{font-size:15px;margin-bottom:4px}.l p{font-size:13px;color:#656d76;margin-bottom:10px}
+.paste{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:#f6f8fa;border:1px solid #d0d7de;border-radius:8px;padding:12px 14px;line-height:1.8;color:#57606a;height:132px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eaeef2}
+th{color:#656d76;font-weight:600;font-size:12.5px;background:#f6f8fa}
+td.n{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+.ok{color:#1a7f37;font-weight:700}.warn{color:#9a6700;font-weight:700}
+.log{margin-top:14px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;background:#0d1117;color:#7ee787;border-radius:8px;padding:10px 14px;line-height:1.7}
+.r{border-left:1px solid #d0d7de;padding:22px 28px;background:#f6f8fa}
+.r h2{font-size:15px;margin-bottom:12px}
+.pv{width:210px;height:373px;margin:0 auto;border-radius:12px;overflow:hidden;position:relative;background:#111}
+.pv .band{position:absolute;left:0;right:0;top:0;height:86px;background:#e11d48;color:#fff;font-weight:900;font-size:17px;display:grid;place-items:center;text-align:center;padding:0 10px;line-height:1.3}
+.pv .vid{position:absolute;left:0;right:0;top:86px;height:200px;background:linear-gradient(135deg,#475569,#94a3b8)}
+.pv .sub{position:absolute;left:8px;right:8px;top:232px;color:#fff;font-weight:900;font-size:14px;text-align:center;-webkit-text-stroke:3px #000;paint-order:stroke}
+.pv .logo{position:absolute;bottom:10px;right:10px;color:#fff;font-size:11px;opacity:.8}
+.opt{margin-top:14px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px}
+.opt dt{color:#656d76}
+.go{margin-top:16px;background:#1f883d;color:#fff;font-weight:800;text-align:center;border-radius:8px;padding:12px;font-size:15px}
+</style></head><body>
+<div class="top"><b>タイムスタンプ一括書き出し</b><span>決めておいた区間を、同じテンプレートでまとめて動画にする</span></div>
+<div class="wrap">
+ <div class="l">
+  <h2>① 区間を貼り付け</h2><p>概要欄のチャプター、メモ、外注先からの指示書（CSV）をそのまま貼り付け</p>
+  <div class="paste">12:05-12:53 スマホを別の部屋に置いたら<br>24:40-25:35 朝5時起き1か月の結果<br>38:12-38:53 買ってよかった第1位<br>51:02-51:59 「どうやって続けてる？」</div>
+  <table><tr><th>#</th><th>開始</th><th>終了</th><th>長さ</th><th>タイトル（上部の帯）</th><th>判定</th></tr>
+   <tr><td>1</td><td class="n">12:05</td><td class="n">12:53</td><td class="n">48秒</td><td>スマホを別の部屋に置いたら</td><td class="ok">OK</td></tr>
+   <tr><td>2</td><td class="n">24:40</td><td class="n">25:35</td><td class="n">55秒</td><td>朝5時起き1か月の結果</td><td class="ok">OK</td></tr>
+   <tr><td>3</td><td class="n">38:12</td><td class="n">38:53</td><td class="n">41秒</td><td>買ってよかった第1位</td><td class="ok">OK</td></tr>
+   <tr><td>4</td><td class="n">51:02</td><td class="n">51:59</td><td class="n">57秒</td><td>「どうやって続けてる？」</td><td class="warn">文の途中で終了 → +2秒</td></tr>
+  </table>
+  <div class="log">$ 書き出し 2/4 完了 … clip_02.mp4（1080×1920・字幕つき・55秒）</div>
+ </div>
+ <div class="r"><h2>② テンプレート</h2>
+  <div class="pv"><div class="band">スマホを別の部屋に<br>置いたら</div><div class="vid"></div><div class="sub">正直最初の3日は<br>しんどかった</div><div class="logo">出典: ○○チャンネル</div></div>
+  <dl class="opt"><dt>帯</dt><dd>上部・赤・2行まで</dd><dt>字幕</dt><dd>白文字＋黒縁・自動文字起こし</dd><dt>切り出し</dt><dd>中央を縦型に（顔の位置を追う）</dd></dl>
+  <div class="go">4本を一括で書き出す</div>
+ </div>
+</div></body></html>

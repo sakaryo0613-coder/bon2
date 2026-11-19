@@ -1,0 +1,47 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:#f4f6fb;color:#1a1d29}
+.top{height:60px;display:flex;align-items:center;padding:0 32px;background:#fff;border-bottom:1px solid #e3e6ef;gap:12px}
+.logo{font-weight:800;font-size:20px;color:#4f46e5}.tag{font-size:13px;color:#6b7080}
+.main{padding:36px 64px}
+.in{background:#fff;border:1px solid #e3e6ef;border-radius:16px;padding:28px 32px;box-shadow:0 4px 18px rgba(30,40,90,.06)}
+.in h1{font-size:26px;margin-bottom:16px}
+.row{display:flex;gap:12px}
+.url{flex:1;height:56px;border:2px solid #c7cbe0;border-radius:12px;display:flex;align-items:center;padding:0 18px;font-size:17px;color:#454a5e}
+.go{height:56px;padding:0 30px;border-radius:12px;background:#4f46e5;color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center}
+.chips{display:flex;gap:10px;margin-top:14px}
+.chips span{background:#eef0fb;color:#3a3f8f;border-radius:999px;padding:6px 14px;font-size:14px;font-weight:600}
+.steps{display:flex;gap:12px;margin-top:22px}
+.st{flex:1;background:#fff;border:1px solid #e3e6ef;border-radius:12px;padding:14px 16px;font-size:15px}
+.st b{display:block;font-size:13px;color:#6b7080;font-weight:600}
+.st.done{border-color:#22c55e}.st.now{border:2px solid #4f46e5}
+.bar{height:8px;background:#e3e6ef;border-radius:4px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:72%;background:#4f46e5}
+.res{display:flex;gap:16px;margin-top:22px}
+.clip{width:176px}
+.th{height:250px;border-radius:12px;position:relative;overflow:hidden;color:#fff}
+.th em{position:absolute;left:10px;right:10px;bottom:12px;font-style:normal;font-weight:800;font-size:15px;line-height:1.35;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.th small{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);border-radius:6px;padding:2px 6px;font-size:12px}
+.clip p{font-size:13px;margin-top:6px;color:#454a5e}
+.wait{background:repeating-linear-gradient(45deg,#e6e8f2,#e6e8f2 10px,#eef0f7 10px,#eef0f7 20px)!important;color:#8a8fa3;display:grid;place-items:center;font-size:14px}
+</style></head><body>
+<div class="top"><div class="logo">AutoClip</div><div class="tag">URLを入れるだけで、ショートを自動で作る</div></div>
+<div class="main">
+ <div class="in"><h1>どの動画を切り抜きますか？</h1>
+  <div class="row"><div class="url">https://youtu.be/xxxxxxxx 　【雑談配信】最近ハマってること全部話す（1:02:14）</div><div class="go">自動で切り抜く ▶</div></div>
+  <div class="chips"><span>縦型 9:16</span><span>30〜60秒</span><span>字幕を焼き込む</span><span>本数: おまかせ（最大8本）</span><span>出典表記: あり</span></div>
+ </div>
+ <div class="steps">
+  <div class="st done"><b>① 動画の取得</b>完了</div>
+  <div class="st done"><b>② 文字起こし</b>完了（11分）</div>
+  <div class="st now"><b>③ AIが見どころを選定</b>実行中 72%<div class="bar"><i></i></div></div>
+  <div class="st"><b>④ 縦型・字幕で書き出し</b>待機中</div>
+ </div>
+ <div class="res">
+  <div class="clip"><div class="th" style="background:linear-gradient(160deg,#f97316,#7c2d12)"><small>0:48</small><em>「それ逆に損してない？」で全員黙った話</em></div><p>12:05〜12:53</p></div>
+  <div class="clip"><div class="th" style="background:linear-gradient(160deg,#06b6d4,#1e3a8a)"><small>0:55</small><em>朝5時起きを1か月続けた結果</em></div><p>24:40〜25:35</p></div>
+  <div class="clip"><div class="th" style="background:linear-gradient(160deg,#a855f7,#3b0764)"><small>0:37</small><em>買ってよかったもの第1位</em></div><p>38:12〜38:49</p></div>
+  <div class="clip"><div class="th" style="background:linear-gradient(160deg,#22c55e,#14532d)"><small>0:59</small><em>視聴者の質問にガチで答える</em></div><p>51:02〜52:01</p></div>
+  <div class="clip"><div class="th wait">選定中…</div><p>&nbsp;</p></div>
+  <div class="clip"><div class="th wait">選定中…</div><p>&nbsp;</p></div>
+ </div>
+</div></body></html>
