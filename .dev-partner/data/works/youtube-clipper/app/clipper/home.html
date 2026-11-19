@@ -8,6 +8,7 @@
 :root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--sub:#6b7280;--line:#e5e7eb;--accent:#0067c0;--accent-bg:#e8f1fb;--ok:#16a34a;--ng:#dc2626;--ng-bg:#fee2e2;--side:#eef0f3}
 @media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--sub:#9ca3af;--line:#2a2f38;--accent:#4ea1ff;--accent-bg:#13263d;--ok:#22c55e;--ng:#f87171;--ng-bg:#3a1515;--side:#14171c}}
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}   /* display を指定した要素でも hidden 属性で必ず隠す（B-012 で #start が隠れなかった） */
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI","Yu Gothic UI",Meiryo,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:grid;grid-template-rows:auto auto 1fr}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px}

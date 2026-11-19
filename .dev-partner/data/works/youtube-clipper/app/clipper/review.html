@@ -10,6 +10,7 @@
 @media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--sub:#9ca3af;--line:#2a2f38;--accent:#60a5fa;--ok:#22c55e;--ok-bg:#12301d;
 --ng:#f87171;--ng-bg:#3a1515;--chip:#22263a;--chip-ink:#c7d2fe;--score:#3a2f12;--score-ink:#fcd34d;--sel:#1e2a44}}
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}   /* display を指定した要素でも hidden 属性で必ず隠す（B-012 で #start が隠れなかった） */
 body{background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px}
 button:disabled{opacity:.4;cursor:not-allowed}
