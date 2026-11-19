@@ -1,0 +1,18 @@
+{
+  "title": "切り抜きの縦型レイアウト調整",
+  "target": "works/youtube-clipper/app/clipper/config.py（同名の定数）",
+  "viewport": [1080, 1920],
+  "params": [
+    {"key": "TITLE_SIZE", "label": "タイトルの文字サイズ", "value": 72, "min": 48, "max": 110, "step": 2, "unit": "px", "css": "--title-size", "note": "大きくすると1行の字数（TITLE_LINE_CHARS=13）も減らす必要あり"},
+    {"key": "BAND_Y", "label": "タイトル帯の上端", "value": 228, "min": 160, "max": 400, "step": 4, "unit": "px", "css": "--band-y"},
+    {"key": "BAND_H", "label": "タイトル帯の高さ", "value": 392, "min": 200, "max": 420, "step": 4, "unit": "px", "css": "--band-h", "note": "帯の下端が動画（y=656）に重ならないように"},
+    {"key": "BAND_COLOR", "label": "タイトル帯の色", "type": "color", "value": "#E11D48", "css": "--band-color"},
+    {"key": "BG_COLOR", "label": "背景色", "type": "color", "value": "#101010", "css": "--bg"},
+    {"key": "SUB_SIZE", "label": "字幕の文字サイズ", "value": 64, "min": 44, "max": 96, "step": 2, "unit": "px", "css": "--sub-size", "note": "大きくすると1行の字数（SUB_LINE_CHARS=15）も減らす必要あり"},
+    {"key": "SUB_Y", "label": "字幕の上端", "value": 1330, "min": 1270, "max": 1500, "step": 5, "unit": "px", "css": "--sub-y"},
+    {"key": "SUB_OUTLINE", "label": "字幕の縁取り", "value": 6, "min": 0, "max": 12, "step": 1, "unit": "px", "css": "--sub-outline"},
+    {"key": "CREDIT_SIZE", "label": "出典の文字サイズ", "value": 32, "min": 22, "max": 48, "step": 2, "unit": "px", "css": "--credit-size"},
+    {"key": "CREDIT_Y", "label": "出典の上端", "value": 1276, "min": 1266, "max": 1320, "step": 2, "unit": "px", "css": "--credit-y"}
+  ],
+  "toggles": [{"label": "Shorts の操作UIに隠れる範囲を表示", "cls": "safe", "on": true}]
+}

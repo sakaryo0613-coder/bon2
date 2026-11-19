@@ -1,0 +1,4 @@
+samples/.gen/
+__pycache__/
+.pytest_cache/
+*.clipper/

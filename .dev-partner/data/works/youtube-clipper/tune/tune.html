@@ -1,0 +1,117 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>切り抜きの縦型レイアウト調整</title>
+<style>
+:root{--bg:#f4f4f2;--card:#fff;--ink:#1c1c1e;--sub:#62626a;--line:#deddd6;--accent:#1f5eff;--chg:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#121214;--card:#1c1c20;--ink:#f1f1f3;--sub:#a4a4ad;--line:#33333a;--accent:#7aa2ff;--chg:#ff8a4c}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif}
+.wrap{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:20px;max-width:1300px;margin:0 auto;padding:20px}
+h1{font-size:18px;margin-bottom:2px}.lead{color:var(--sub);font-size:13px;margin-bottom:12px}
+.ctl{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 14px}
+.p{padding:10px 0;border-top:1px solid var(--line)}.p:first-child{border-top:0}
+.p .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.p label{font-weight:600}.p code{font-size:11.5px;color:var(--sub)}
+.p .v{font-variant-numeric:tabular-nums;font-weight:700}.p.chg .v{color:var(--chg)}
+.p .r{display:flex;gap:8px;align-items:center;margin-top:4px}
+.p input[type=range]{flex:1;accent-color:var(--accent)}
+.p input[type=number]{width:76px;font:inherit;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.p input[type=color]{width:56px;height:30px;border:1px solid var(--line);border-radius:6px;background:none}
+.p .note{font-size:12px;color:var(--sub);margin-top:2px}
+.p button{font-size:12px;border:1px solid var(--line);background:var(--bg);color:var(--sub);border-radius:6px;padding:1px 8px;cursor:pointer;visibility:hidden}
+.p.chg button{visibility:visible}
+.act{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.act button{font:inherit;font-weight:700;border-radius:10px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.act .main{background:var(--accent);border-color:var(--accent);color:#fff;flex:1}
+#out{width:100%;min-height:110px;margin-top:10px;font:12.5px/1.6 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--ink)}
+#msg{font-size:12px;color:var(--sub);margin-top:4px}
+.pv{position:sticky;top:20px;align-self:start}
+.frame{position:relative;margin:0 auto;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+.frame iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0}
+.opts{display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:13px;color:var(--sub)}
+@media (max-width:820px){.wrap{grid-template-columns:1fr;padding:16px}.pv{position:static;order:-1}}
+</style></head><body>
+<div class="wrap">
+ <section>
+  <h1>切り抜きの縦型レイアウト調整</h1><p class="lead">スライダーで調整すると右のプレビューに即時に反映されます。終わったら「変更点をプロンプトにしてコピー」→ チャットに貼り付け。<br>反映先: <code>works/youtube-clipper/app/clipper/config.py（同名の定数）</code></p>
+  <div class="ctl" id="ctl"></div>
+  <div class="act"><button class="main" id="copy">変更点をプロンプトにしてコピー</button><button id="reset">すべて戻す</button></div>
+  <textarea id="out" readonly placeholder="ここに変更点の一覧が出ます"></textarea><div id="msg"></div>
+ </section>
+ <section class="pv"><div class="frame" id="frame"><iframe id="pf" title="プレビュー"></iframe></div>
+  <div class="opts" id="opts"></div></section>
+</div>
+<template id="src"><!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
+:root{--title-size:72px;--band-y:228px;--band-h:392px;--band-color:#E11D48;--bg:#101010;--sub-size:64px;--sub-y:1330px;--sub-outline:6px;--credit-size:32px;--credit-y:1276px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1920px;overflow:hidden;background:var(--bg);position:relative;font-family:"Hiragino Sans","Noto Sans CJK JP","Yu Gothic UI",Meiryo,sans-serif;color:#fff}
+.band{position:absolute;left:0;right:0;top:var(--band-y);height:var(--band-h);background:var(--band-color);display:grid;place-items:center;text-align:center}
+.title{font-size:var(--title-size);font-weight:800;line-height:1.25}
+.video{position:absolute;left:0;top:656px;width:1080px;height:608px;background:linear-gradient(135deg,#334155,#64748b 60%,#94a3b8);display:grid;place-items:center;font-size:40px;color:#e2e8f0}
+.credit{position:absolute;right:60px;top:var(--credit-y);font-size:var(--credit-size);opacity:.75;-webkit-text-stroke:2px rgba(0,0,0,.5);paint-order:stroke fill}
+.sub{position:absolute;left:60px;right:60px;top:var(--sub-y);text-align:center;font-size:var(--sub-size);font-weight:800;line-height:1.25;-webkit-text-stroke:calc(var(--sub-outline) * 2) #000;paint-order:stroke fill}
+.zone{display:none;position:absolute;left:0;right:0;background:rgba(255,0,0,.18);border:3px dashed rgba(255,80,80,.9);color:#fca5a5;font-size:30px;padding:16px}
+body.safe .zone{display:block}
+.z1{top:0;height:240px}.z2{top:1520px;bottom:0}
+</style></head><body>
+<div class="band"><div class="title">朝五時起きを一か月続けた<br>結果を発表します</div></div>
+<div class="video">16:9 の元動画（1080×608）</div>
+<div class="credit">出典: サンプルチャンネル</div>
+<div class="sub">でも結果的に、読んだ本が<br>一か月で八冊になりました。</div>
+<div class="zone z1">上部UI（検索・カメラ）に隠れる範囲</div>
+<div class="zone z2">下部UI（タイトル・チャンネル名・いいね等）に隠れる範囲</div>
+</body></html>
+</template>
+<script>
+const CFG = {"title": "切り抜きの縦型レイアウト調整", "target": "works/youtube-clipper/app/clipper/config.py（同名の定数）", "viewport": [1080, 1920], "params": [{"key": "TITLE_SIZE", "label": "タイトルの文字サイズ", "value": 72, "min": 48, "max": 110, "step": 2, "unit": "px", "css": "--title-size", "note": "大きくすると1行の字数（TITLE_LINE_CHARS=13）も減らす必要あり"}, {"key": "BAND_Y", "label": "タイトル帯の上端", "value": 228, "min": 160, "max": 400, "step": 4, "unit": "px", "css": "--band-y"}, {"key": "BAND_H", "label": "タイトル帯の高さ", "value": 392, "min": 200, "max": 420, "step": 4, "unit": "px", "css": "--band-h", "note": "帯の下端が動画（y=656）に重ならないように"}, {"key": "BAND_COLOR", "label": "タイトル帯の色", "type": "color", "value": "#E11D48", "css": "--band-color"}, {"key": "BG_COLOR", "label": "背景色", "type": "color", "value": "#101010", "css": "--bg"}, {"key": "SUB_SIZE", "label": "字幕の文字サイズ", "value": 64, "min": 44, "max": 96, "step": 2, "unit": "px", "css": "--sub-size", "note": "大きくすると1行の字数（SUB_LINE_CHARS=15）も減らす必要あり"}, {"key": "SUB_Y", "label": "字幕の上端", "value": 1330, "min": 1270, "max": 1500, "step": 5, "unit": "px", "css": "--sub-y"}, {"key": "SUB_OUTLINE", "label": "字幕の縁取り", "value": 6, "min": 0, "max": 12, "step": 1, "unit": "px", "css": "--sub-outline"}, {"key": "CREDIT_SIZE", "label": "出典の文字サイズ", "value": 32, "min": 22, "max": 48, "step": 2, "unit": "px", "css": "--credit-size"}, {"key": "CREDIT_Y", "label": "出典の上端", "value": 1276, "min": 1266, "max": 1320, "step": 2, "unit": "px", "css": "--credit-y"}], "toggles": [{"label": "Shorts の操作UIに隠れる範囲を表示", "cls": "safe", "on": true}]};
+const [VW, VH] = CFG.viewport;
+const pf = document.getElementById('pf');
+pf.srcdoc = document.getElementById('src').innerHTML;
+const cur = Object.fromEntries(CFG.params.map(p => [p.key, p.value]));
+const fmt = (p, v) => p.type === 'color' ? String(v).toUpperCase() : `${v}${p.unit || ''}`;
+function apply() {
+  const d = pf.contentDocument; if (!d || !d.documentElement) return;
+  for (const p of CFG.params) if (p.css) d.documentElement.style.setProperty(p.css, p.type === 'color' ? cur[p.key] : cur[p.key] + (p.unit || ''));
+}
+pf.addEventListener('load', apply);
+function fit() {
+  const box = document.getElementById('frame'); const maxH = Math.min(window.innerHeight - 80, 900);
+  const w = Math.min(box.parentElement.clientWidth, maxH * VW / VH); const s = w / VW;
+  box.style.width = w + 'px'; box.style.height = VH * s + 'px';
+  pf.style.width = VW + 'px'; pf.style.height = VH + 'px'; pf.style.transform = `scale(${s})`;
+}
+window.addEventListener('resize', fit); fit();
+const ctl = document.getElementById('ctl');
+for (const p of CFG.params) {
+  const el = document.createElement('div'); el.className = 'p'; el.dataset.key = p.key;
+  const input = p.type === 'color'
+    ? `<input type="color" value="${p.value}">`
+    : `<input type="range" min="${p.min}" max="${p.max}" step="${p.step || 1}" value="${p.value}"><input type="number" min="${p.min}" max="${p.max}" step="${p.step || 1}" value="${p.value}">`;
+  el.innerHTML = `<div class="h"><label>${p.label}</label><span><span class="v"></span> <button title="元に戻す">戻す</button></span></div>
+    <div class="r">${input}</div><code>${p.key}</code>${p.note ? `<div class="note">${p.note}</div>` : ''}`;
+  ctl.appendChild(el);
+  const ins = el.querySelectorAll('input');
+  const set = v => { cur[p.key] = p.type === 'color' ? v : Number(v); ins.forEach(i => { if (i.value != v) i.value = v; });
+    el.querySelector('.v').textContent = fmt(p, cur[p.key]); el.classList.toggle('chg', String(cur[p.key]).toLowerCase() !== String(p.value).toLowerCase()); apply(); };
+  ins.forEach(i => i.addEventListener('input', () => set(i.value)));
+  el.querySelector('button').onclick = () => set(p.value);
+  set(p.value);
+}
+const toggles = CFG.toggles || [];
+document.getElementById('opts').innerHTML = toggles.map(t => `<label><input type="checkbox" data-cls="${t.cls}" ${t.on ? 'checked' : ''}> ${t.label}</label>`).join('');
+document.querySelectorAll('#opts input').forEach(i => i.onchange = () => pf.contentDocument.body.classList.toggle(i.dataset.cls, i.checked));
+pf.addEventListener('load', () => document.querySelectorAll('#opts input').forEach(i => pf.contentDocument.body.classList.toggle(i.dataset.cls, i.checked)));
+function prompt() {
+  const ch = CFG.params.filter(p => String(cur[p.key]).toLowerCase() !== String(p.value).toLowerCase());
+  if (!ch.length) return '';
+  return `${CFG.title}：次の数値を変更してください（反映先: ${CFG.target}）。\n` +
+    ch.map(p => `- ${p.label}（${p.key}）: ${fmt(p, p.value)} → ${fmt(p, cur[p.key])}`).join('\n') +
+    `\n変更後、プレビューではなく実際の出力で確認してください。`;
+}
+document.getElementById('copy').onclick = async () => {
+  const t = prompt(); const out = document.getElementById('out'); const msg = document.getElementById('msg');
+  out.value = t || ''; if (!t) { msg.textContent = 'まだ何も変更していません'; return; }
+  try { await navigator.clipboard.writeText(t); msg.textContent = 'コピーしました。チャットに貼り付けて送ってください。'; }
+  catch (e) { out.select(); document.execCommand('copy'); msg.textContent = 'コピーしました（できていなければ上の欄から手動でコピー）'; }
+};
+document.getElementById('reset').onclick = () => document.querySelectorAll('.p button').forEach(b => b.click());
+</script></body></html>

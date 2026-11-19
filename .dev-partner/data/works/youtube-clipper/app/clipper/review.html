@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>切り抜きレビュー</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--sub:#6b7280;--line:#e5e7eb;--accent:#2563eb;--ok:#16a34a;--ok-bg:#dcfce7;--ng:#dc2626;--ng-bg:#fee2e2;
+--chip:#eef2ff;--chip-ink:#3730a3;--score:#fef3c7;--score-ink:#92400e;--sel:#dbeafe}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--sub:#9ca3af;--line:#2a2f38;--accent:#60a5fa;--ok:#22c55e;--ok-bg:#12301d;
+--ng:#f87171;--ng-bg:#3a1515;--chip:#22263a;--chip-ink:#c7d2fe;--score:#3a2f12;--score-ink:#fcd34d;--sel:#1e2a44}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px}
+button:disabled{opacity:.4;cursor:not-allowed}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line)}
+.hd{max-width:1400px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hd h1{font-size:17px;white-space:nowrap}
+.vt{color:var(--sub);font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stats{display:flex;gap:6px}
+.stats span{font-size:13px;font-weight:600;border-radius:999px;padding:3px 10px;background:var(--bg)}
+#go{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700;padding:8px 16px}
+.prog{max-width:1400px;margin:0 auto;padding:0 20px 10px;display:none}
+.prog.on{display:block}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.prog p{font-size:13px;color:var(--sub);margin-top:4px;overflow-wrap:anywhere}
+main{max-width:1400px;margin:0 auto;padding:16px 20px 40px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+.panel{position:sticky;top:70px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+.det{padding:14px 16px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tt{flex:1;min-width:0;font:inherit;font-weight:700;font-size:17px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--bg);color:var(--ink)}
+.cnt{font-size:12px;color:var(--sub);white-space:nowrap}
+.meta{margin:8px 0;font-size:13px;color:var(--sub);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.score{background:var(--score);color:var(--score-ink);font-weight:800;border-radius:6px;padding:1px 8px;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chips i{font-style:normal;font-size:12px;background:var(--chip);color:var(--chip-ink);border-radius:5px;padding:1px 7px}
+.tx{border:1px solid var(--line);border-radius:10px;margin:10px 0 0;max-height:240px;overflow:auto}
+.tx .s{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:6px 10px;font-size:14px;border-top:1px solid var(--line)}
+.tx .s:first-child{border-top:0}
+.tx .s time{color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums;padding-top:2px}
+.tx .s.out{color:var(--sub);background:var(--bg);font-size:13px}
+.tx .s.now{background:var(--sel)}
+.adj{display:flex;gap:6px;flex-wrap:wrap}
+.adj button{font-size:13px;padding:4px 10px}
+.act{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin:10px 0}
+.act button{padding:10px;font-weight:700}
+.act .y{background:var(--ok);border-color:var(--ok);color:#fff}
+.act .n{color:var(--ng);border-color:var(--ng)}
+.keys{font-size:12px;color:var(--sub);margin-top:8px}
+kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--bg)}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button{border-radius:999px;font-size:13px;padding:4px 12px}
+.tabs button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.list{display:flex;flex-direction:column;gap:10px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center}
+.c.sel{outline:2px solid var(--accent);outline-offset:-1px}
+.c.accepted{border-left:5px solid var(--ok)}.c.rejected{opacity:.5;border-left:5px solid var(--ng)}
+.c .t{font-weight:700;line-height:1.4;min-width:0;overflow-wrap:anywhere}
+.c .r{grid-column:2/4;font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums}
+.c .chips{grid-column:2/4}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.pill.accepted{background:var(--ok-bg);color:var(--ok)}.pill.rejected{background:var(--ng-bg);color:var(--ng)}.pill.pending{background:var(--bg);color:var(--sub)}
+.empty{color:var(--sub);text-align:center;padding:30px}
+@media (max-width:900px){main{grid-template-columns:1fr;padding:12px 16px 40px}.panel{position:static}.hd{padding:10px 16px}.vt{flex-basis:100%;order:3}
+.prog{padding:0 16px 10px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <h1>切り抜きレビュー</h1>
+    <div class="stats"><span id="st-p">未判断 0</span><span id="st-a">採用 0</span><span id="st-r">却下 0</span></div>
+    <div class="vt" id="vt"></div>
+    <button id="go" disabled>採用した 0 本を書き出す</button>
+  </div>
+  <div class="prog" id="prog"><div class="bar"><i id="pbar"></i></div><p id="ptext"></p></div>
+</header>
+<main>
+  <section class="panel">
+    <video id="v" src="/media/source" preload="metadata" controls playsinline></video>
+    <div class="det" id="det"><div class="empty">候補を選んでください</div></div>
+  </section>
+  <section>
+    <div class="tabs" id="tabs">
+      <button data-f="all" class="on">すべて</button><button data-f="pending">未判断</button>
+      <button data-f="accepted">採用</button><button data-f="rejected">却下</button>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+</main>
+<script>
+const S = {clips: [], sents: [], meta: {}, limits: {min: 20, max: 60}, sel: null, filter: 'all'};
+const $ = id => document.getElementById(id);
+const v = $('v');
+const fmt = t => { t = Math.max(0, t); const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${m}:${String(s).padStart(2, '0')}`; };
+const STATUS = {pending: '未判断', accepted: '採用', rejected: '却下'};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+
+async function load() {
+  const st = await (await fetch('/api/state')).json();
+  Object.assign(S, {clips: st.clips, sents: st.sentences, meta: st.meta, limits: st.limits});
+  $('vt').textContent = `${st.meta.title || ''}（${fmt(st.meta.duration || 0)}）・候補 ${st.clips.length}`;
+  if (!S.sel && S.clips.length) S.sel = S.clips[0].id;
+  render(); select(S.sel, false);
+  if (st.progress && st.progress.running) poll();
+}
+
+function render() {
+  const n = k => S.clips.filter(c => c.status === k).length;
+  $('st-p').textContent = `未判断 ${n('pending')}`; $('st-a').textContent = `採用 ${n('accepted')}`; $('st-r').textContent = `却下 ${n('rejected')}`;
+  $('go').textContent = `採用した ${n('accepted')} 本を書き出す`; $('go').disabled = !n('accepted');
+  const list = S.clips.filter(c => S.filter === 'all' || c.status === S.filter);
+  $('list').innerHTML = list.length ? list.map(c => `
+    <article class="c ${c.status} ${c.id === S.sel ? 'sel' : ''}" data-id="${c.id}">
+      <span class="score" title="採点: ${c.scorer === 'llm' ? 'Claude' : 'ルール'}">${c.score ?? '-'}</span>
+      <div class="t">${esc(c.title)}</div><span class="pill ${c.status}">${STATUS[c.status]}</span>
+      <div class="r">${fmt(c.start)}〜${fmt(c.end)}（${Math.round(c.duration)}秒）</div>
+      <div class="chips">${(c.reasons || []).map(r => `<i>${esc(r)}</i>`).join('')}</div>
+    </article>`).join('') : '<div class="empty">該当する候補はありません</div>';
+  document.querySelectorAll('.c').forEach(el => el.onclick = () => select(el.dataset.id, true));
+}
+
+function cur() { return S.clips.find(c => c.id === S.sel); }
+
+function select(id, seek = true) {
+  S.sel = id; const c = cur(); if (!c) return;
+  document.querySelectorAll('.c').forEach(el => el.classList.toggle('sel', el.dataset.id === id));
+  const a = c.start_sid, b = c.end_sid, last = S.sents.length - 1;
+  const row = (s, cls) => `<div class="s ${cls}" data-t="${s.start}"><time>${fmt(s.start)}</time><div>${esc(s.text)}</div></div>`;
+  const before = a > 0 ? row(S.sents[a - 1], 'out') : '';
+  const after = b < last ? row(S.sents[b + 1], 'out') : '';
+  $('det').innerHTML = `
+    <div class="row"><input class="tt" id="tt" value="${esc(c.title)}" maxlength="26" aria-label="タイトル"><span class="cnt" id="cnt"></span></div>
+    <div class="meta"><span class="score">${c.score ?? '-'}</span><span>${fmt(c.start)}〜${fmt(c.end)}・<b>${c.duration.toFixed(1)}秒</b></span>
+      <div class="chips">${(c.reasons || []).map(r => `<i>${esc(r)}</i>`).join('')}</div></div>
+    <div class="act"><button class="y" id="ok">✓ 採用</button><button class="n" id="ng">✕ 却下</button><button id="pl">▶ 再生</button></div>
+    <div class="adj">
+      <button id="pa" ${a === 0 ? 'disabled' : ''}>＋前の文</button><button id="ma" ${a === b ? 'disabled' : ''}>−先頭の文</button>
+      <button id="mb" ${a === b ? 'disabled' : ''}>−末尾の文</button><button id="pb" ${b === last ? 'disabled' : ''}>＋次の文</button>
+    </div>
+    <div class="tx" id="tx">${before}${S.sents.slice(a, b + 1).map(s => row(s, '')).join('')}${after}</div>
+    <div class="keys"><kbd>A</kbd> 採用 · <kbd>X</kbd> 却下 · <kbd>J</kbd>/<kbd>K</kbd> 次・前 · <kbd>Space</kbd> 再生 · グレーの行は区間の外（伸ばすと入る）</div>`;
+  const tt = $('tt'); const cnt = () => $('cnt').textContent = `${tt.value.length}/26字`; cnt();
+  tt.oninput = cnt; tt.onchange = () => patch({title: tt.value});
+  $('pa').onclick = () => patch({start_sid: a - 1}); $('ma').onclick = () => patch({start_sid: a + 1});
+  $('mb').onclick = () => patch({end_sid: b - 1}); $('pb').onclick = () => patch({end_sid: b + 1});
+  $('ok').onclick = () => decide('accepted'); $('ng').onclick = () => decide('rejected'); $('pl').onclick = play;
+  document.querySelectorAll('#tx .s').forEach(el => el.onclick = () => { v.currentTime = +el.dataset.t; v.play(); });
+  if (seek && v.readyState >= 1) v.currentTime = c.start;
+}
+
+async function patch(body) {
+  const c = cur();
+  const r = await (await fetch('/api/decision', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: c.id, ...body})})).json();
+  const before = c.duration;
+  Object.assign(c, r);
+  if ((body.start_sid !== undefined || body.end_sid !== undefined) && r.duration === before) {
+    alert(`長さは ${S.limits.min}〜${S.limits.max} 秒の範囲で調整できます`);
+  }
+  render(); select(c.id, body.start_sid !== undefined);
+}
+
+async function decide(status) {
+  await patch({status});
+  const list = S.clips.filter(c => c.status === 'pending');
+  if (list.length) select(list[0].id);   // 次の未判断へ
+}
+
+function play() { const c = cur(); if (!c) return; v.currentTime = c.start; v.play(); }
+v.addEventListener('loadedmetadata', () => { const c = cur(); if (c) v.currentTime = c.start; });
+v.addEventListener('timeupdate', () => {
+  const c = cur(); if (!c) return;
+  if (!v.paused && v.currentTime >= c.end) v.pause();
+  document.querySelectorAll('#tx .s').forEach(el => {
+    const s = S.sents.find(x => x.start === +el.dataset.t);
+    el.classList.toggle('now', !!s && v.currentTime >= s.start && v.currentTime < s.end);
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const idx = S.clips.findIndex(c => c.id === S.sel);
+  if (e.key === 'a' || e.key === 'A') decide('accepted');
+  else if (e.key === 'x' || e.key === 'X') decide('rejected');
+  else if (e.key === 'j' || e.key === 'J') { if (idx < S.clips.length - 1) select(S.clips[idx + 1].id); }
+  else if (e.key === 'k' || e.key === 'K') { if (idx > 0) select(S.clips[idx - 1].id); }
+  else if (e.key === ' ') { e.preventDefault(); v.paused ? play() : v.pause(); }
+});
+$('tabs').onclick = e => { const f = e.target.dataset.f; if (!f) return; S.filter = f;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.f === f)); render(); };
+
+$('go').onclick = async () => {
+  const r = await (await fetch('/api/render', {method: 'POST'})).json();
+  if (!r.ok) { alert(r.error || '書き出しを開始できませんでした'); return; }
+  poll();
+};
+async function poll() {
+  $('prog').classList.add('on'); $('go').disabled = true;
+  const p = await (await fetch('/api/render')).json();
+  $('pbar').style.width = (p.total ? 100 * p.done / p.total : 0) + '%';
+  if (p.error) { $('ptext').textContent = 'エラー: ' + p.error; render(); return; }
+  if (p.running) { $('ptext').textContent = `書き出し中 ${p.done}/${p.total}：${p.current}`; setTimeout(poll, 1000); return; }
+  $('ptext').textContent = `完了：${p.files.length} 本を out/ に書き出しました（${p.files.join('、')}）。説明文の下書きは out/clips.csv にあります。`;
+  render();
+}
+load();
+</script>
+</body>
+</html>

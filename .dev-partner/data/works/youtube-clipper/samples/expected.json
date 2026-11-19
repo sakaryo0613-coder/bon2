@@ -1,0 +1,52 @@
+{
+  "duration": 368.15,
+  "n_candidates": 5,
+  "highlights": {
+    "H1": {
+      "kind": "highlight",
+      "start": 62.0,
+      "end": 101.1
+    },
+    "H2": {
+      "kind": "highlight",
+      "start": 129.95,
+      "end": 160.0
+    },
+    "H3": {
+      "kind": "highlight",
+      "start": 208.75,
+      "end": 237.8
+    },
+    "H4": {
+      "kind": "highlight",
+      "start": 266.65,
+      "end": 295.7
+    },
+    "H5": {
+      "kind": "highlight",
+      "start": 318.1,
+      "end": 348.55
+    }
+  },
+  "bad": {
+    "greeting": {
+      "kind": "bad",
+      "start": 2.0,
+      "end": 27.7
+    },
+    "announce": {
+      "kind": "bad",
+      "start": 184.4,
+      "end": 207.85
+    },
+    "ending": {
+      "kind": "bad",
+      "start": 349.45,
+      "end": 365.25
+    }
+  },
+  "min_highlight_hits": 4,
+  "hit_rule": "候補が見どころの時間の60%以上を含めばヒット",
+  "bad_rule": "候補の時間の50%以上が bad 区間なら違反",
+  "sentence_count": 78
+}
