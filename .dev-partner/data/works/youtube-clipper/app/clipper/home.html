@@ -51,13 +51,14 @@ main h1{font-size:24px}
 .stg span{font-size:12.5px;border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--sub);text-align:center}
 .stg span.now{background:var(--accent-bg);color:var(--accent);font-weight:700}
 .stg span.ok{color:var(--ok)}
+.stg span.ng{background:var(--ng-bg);color:var(--ng);font-weight:700}
 .bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
 .bar.ind i{width:30%;animation:ind 1.4s infinite ease-in-out}
 @keyframes ind{0%{margin-left:-30%}100%{margin-left:100%}}
 .msg{font-size:14px;margin-top:8px}
 .note{font-size:12.5px;color:var(--sub);margin-top:4px}
-.err{margin-top:12px;background:var(--ng-bg);color:var(--ng);border-radius:10px;padding:10px 14px;font-size:14px;overflow-wrap:anywhere}
+.err{margin-top:12px;background:var(--ng-bg);color:var(--ng);border-radius:10px;padding:10px 14px;font-size:14px;overflow-wrap:anywhere;white-space:pre-wrap}
 .err[hidden]{display:none}
 dialog{border:0;border-radius:14px;padding:22px 24px;max-width:480px;width:calc(100% - 32px);background:var(--card);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.45)}
@@ -120,6 +121,7 @@ const base = p => p.split(/[\\/]/).pop();
 async function load() {
   const h = await (await fetch('/api/home')).json();
   if (!$('credit').value) $('credit').value = h.config.credit || '';
+  S.log = h.log;
   $('key').placeholder = h.config.has_api_key ? '設定済み（変更するときだけ入力）' : 'sk-ant-…（未設定）';
   $('recent').innerHTML = h.recent.length ? h.recent.map(r => `<button class="item" data-w="${esc(r.id)}">${esc(r.title)}
       <small>候補${r.n}・採用${r.accepted}・未判断${r.pending}${r.outputs ? '・書き出し' + r.outputs : ''}</small></button>`).join('')
@@ -167,7 +169,7 @@ function watch(job) {
 }
 async function tick() {
   const j = await (await fetch('/api/jobs/' + S.job.id)).json();
-  if (j.error) { showErr('うまくいきませんでした: ' + j.error); $('start').hidden = false; $('start').disabled = false; $('pick').disabled = false; return; }
+  if (j.error) { failed(j); return; }
   const i = ORDER.indexOf(j.stage);
   document.querySelectorAll('.stg span').forEach(s => {
     const k = ORDER.indexOf(s.dataset.s); s.className = k < i ? 'ok' : (k === i ? 'now' : '');
@@ -180,6 +182,16 @@ async function tick() {
   setTimeout(tick, 1000);
 }
 function showErr(m) { $('err').textContent = m; $('err').hidden = false; }
+// 失敗したら: アニメーションを止め、失敗した段階を赤で示し、「もう一度試す」とログの場所を出す
+function failed(j) {
+  $('bar').classList.remove('ind'); $('bar-i').style.width = '0%';
+  const now = document.querySelector('.stg span.now');
+  if (now) { now.className = 'ng'; now.textContent = '✕ ' + now.textContent.replace(/^✓ /, ''); }
+  $('job-title').textContent = '候補づくりに失敗しました';
+  $('job-msg').textContent = ''; $('job-note').textContent = '';
+  showErr(`うまくいきませんでした: ${j.error}\n\nもう一度試しても同じ場合は、このメッセージと次のファイルの内容を Claude に伝えてください。\n${S.log || ''}`);
+  $('start').hidden = false; $('start').disabled = false; $('start').textContent = 'もう一度試す'; $('pick').disabled = false;
+}
 
 $('settings').onclick = () => $('dlg').showModal();
 $('dlg-close').onclick = () => $('dlg').close();

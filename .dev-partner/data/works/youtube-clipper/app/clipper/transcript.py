@@ -89,11 +89,11 @@ def transcribe_whisper(video: Path, model: str = "small", progress=None, downloa
     segments, info = wm.transcribe(audio, language=language, vad_filter=True, word_timestamps=True)
     total = duration or getattr(info, "duration", None) or 0
     out = []
-    for s in segments:
-        words = [{"start": w.start, "end": w.end, "text": w.word} for w in (s.words or [])]
-        out.append({"start": s.start, "end": s.end, "text": s.text.strip(), "words": words})
+    for s in segments:   # 時刻は numpy の型（int64 など）で返ることがあるので、必ず float にする（JSON に保存するため）
+        words = [{"start": float(w.start), "end": float(w.end), "text": str(w.word)} for w in (s.words or [])]
+        out.append({"start": float(s.start), "end": float(s.end), "text": str(s.text).strip(), "words": words})
         if total:
-            pct = min(99.0, 100 * s.end / total)
+            pct = min(99.0, 100 * float(s.end) / float(total))
             progress(pct, f"文字起こし中 {int(s.end // 60)}分{int(s.end % 60):02d}秒 / {int(total // 60)}分")
     return out
 

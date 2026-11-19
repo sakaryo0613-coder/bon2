@@ -13,6 +13,13 @@ from .candidates import clip_bounds, fit_title
 from .render import render_clip, safe_name
 
 
+def _json_default(o):
+    """numpy の数値（int64・float32 など）を Python の数値にする。それ以外は文字列にする。"""
+    if hasattr(o, "item"):
+        return o.item()
+    return str(o)
+
+
 class Workdir:
     def __init__(self, path: Path):
         self.path = Path(path)
@@ -26,7 +33,7 @@ class Workdir:
 
     def write(self, name: str, data) -> None:
         tmp = self.path / (name + ".tmp")
-        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=_json_default), encoding="utf-8")
         tmp.replace(self.path / name)
 
     @property
