@@ -56,6 +56,18 @@ def load_subs(path: Path) -> list[dict]:
     return parse_vtt(text) if path.suffix.lower() == ".vtt" or text.startswith("WEBVTT") else parse_srt(text)
 
 
+def load_audio_16k(path: Path):
+    """ffmpeg で音声を 16kHz・モノラル・float32 の配列にする（Whisper の入力形式）。"""
+    import subprocess
+
+    import numpy as np
+    r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", str(path), "-vn", "-ac", "1", "-ar", "16000",
+                        "-f", "f32le", "-"], capture_output=True)
+    if r.returncode != 0:
+        raise RuntimeError("音声を読み込めませんでした: " + r.stderr.decode("utf-8", "replace")[-500:])
+    return np.frombuffer(r.stdout, np.float32)
+
+
 def transcribe_whisper(video: Path, model: str = "small", progress=None, download_root: Path | None = None,
                        language: str = "ja", duration: float | None = None) -> list[dict]:
     """faster-whisper で文字起こし（語ごとの時刻つき）。初回はモデルをダウンロードする。
@@ -73,7 +85,8 @@ def transcribe_whisper(video: Path, model: str = "small", progress=None, downloa
     Path(download_root).mkdir(parents=True, exist_ok=True)
     progress(-1, f"文字起こしの準備をしています（初回のみ、モデル {model} をダウンロード。数分かかります）")
     wm = WhisperModel(model, device="cpu", compute_type="int8", download_root=str(download_root))
-    segments, info = wm.transcribe(str(video), language=language, vad_filter=True, word_timestamps=True)
+    audio = load_audio_16k(video)   # faster-whisper 内蔵の読み込み（PyAV）は版の組み合わせで壊れるため、同梱の ffmpeg で読む
+    segments, info = wm.transcribe(audio, language=language, vad_filter=True, word_timestamps=True)
     total = duration or getattr(info, "duration", None) or 0
     out = []
     for s in segments:
