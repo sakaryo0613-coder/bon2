@@ -8,6 +8,7 @@
 :root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--sub:#6b7280;--line:#e5e7eb;--accent:#0067c0;--accent-bg:#e8f1fb;--ok:#16a34a;--ng:#dc2626;--ng-bg:#fee2e2;--side:#eef0f3}
 @media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--sub:#9ca3af;--line:#2a2f38;--accent:#4ea1ff;--accent-bg:#13263d;--ok:#22c55e;--ng:#f87171;--ng-bg:#3a1515;--side:#14171c}}
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}   /* display を指定した要素でも hidden 属性で必ず隠す（B-012 で #start が隠れなかった） */
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI","Yu Gothic UI",Meiryo,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:grid;grid-template-rows:auto auto 1fr}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px}
@@ -39,11 +40,19 @@ main h1{font-size:24px}
 .steps{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .steps span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--sub)}
 .steps span.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
-#pick{display:block;width:100%;height:170px;border:2px dashed #9fb5cf;border-radius:14px;background:var(--card);text-align:center;color:var(--sub)}
+#pick{display:block;width:100%;height:124px;border:2px dashed #9fb5cf;border-radius:14px;background:var(--card);text-align:center;color:var(--sub)}
 #pick:hover,#pick.drag{border-color:var(--accent);background:var(--accent-bg)}
 #pick b{display:block;font-size:20px;color:var(--ink);margin:4px 0}
-#pick .ic{font-size:30px}
+#pick .ic{font-size:26px}
 #pick.has{border-style:solid;border-color:var(--accent)}
+.url{display:flex;align-items:center;gap:10px;margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 12px}
+.url.has{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.url .or{font-size:12.5px;color:var(--sub);white-space:nowrap}
+.url input{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--ink);padding:4px 0;outline:none}
+.url-st{font-size:12.5px;margin:4px 2px 0;color:var(--sub)}
+.url-st.ok{color:var(--ok)}
+.url-st.ng{color:var(--ng)}
+.url-st:empty{display:none}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .field{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 .field label{display:block;font-size:12px;color:var(--sub)}
@@ -51,11 +60,12 @@ main h1{font-size:24px}
 .field .val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
 .field input{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--ink);padding:2px 0;outline:none}
 .field button{padding:3px 10px;font-size:13px}
+#start[hidden]{display:none}
 #start{display:block;margin:16px 0 0 auto;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;font-size:17px;padding:12px 34px}
 .job{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
 .job[hidden]{display:none}
 .job h2{font-size:16px;margin-bottom:8px}
-.stg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.stg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin-bottom:10px}
 .stg span{font-size:12.5px;border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--sub);text-align:center}
 .stg span.now{background:var(--accent-bg);color:var(--accent);font-weight:700}
 .stg span.ok{color:var(--ok)}
@@ -75,7 +85,7 @@ dialog p{font-size:13.5px;color:var(--sub);margin-bottom:10px}
 dialog input{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 dialog .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 dialog .btns .p{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
-@media (max-width:760px){.wrap{grid-template-columns:1fr}aside{display:none}main{padding:18px 16px}.row{grid-template-columns:1fr}.stg{grid-template-columns:1fr 1fr}}
+@media (max-width:760px){.wrap{grid-template-columns:1fr}aside{display:none}main{padding:18px 16px}.row{grid-template-columns:1fr}.stg{grid-auto-flow:row;grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -96,9 +106,12 @@ dialog .btns .p{background:var(--accent);border-color:var(--accent);color:#fff;f
   </aside>
   <main><div class="box">
     <h1>新しい切り抜き</h1>
-    <p class="lead">動画を選んで「候補を作る」を押すだけ。終わると自動でレビュー画面に進みます。</p>
-    <div class="steps"><span class="on" id="s1">① 動画を選ぶ</span><span id="s2">② 候補を作る（60分の動画で約20分）</span><span id="s3">③ レビューして書き出す</span></div>
+    <p class="lead">動画を選ぶか Twitch の URL を貼って「候補を作る」。終わると自動でレビュー画面に進みます。</p>
+    <div class="steps"><span class="on" id="s1">① 動画を選ぶ・URL を貼る</span><span id="s2">② 候補を作る（60分の動画で約20分）</span><span id="s3">③ レビューして書き出す</span></div>
     <button id="pick"><span class="ic">🎬</span><b id="pick-title">動画を選ぶ</b><span id="pick-sub">クリックして選ぶ（またはここに動画をドラッグ）</span></button>
+    <label class="url" id="url-row"><span class="or">または Twitch の URL</span>
+      <input id="url" placeholder="https://www.twitch.tv/videos/…（アーカイブの URL を貼る）" autocomplete="off" spellcheck="false"></label>
+    <p class="url-st" id="url-st"></p>
     <div class="row">
       <div class="field"><label>字幕ファイル（任意・あると速く終わる）</label>
         <div class="in"><span class="val" id="subs-val">なし（自動で文字起こし）</span><button id="pick-subs">選ぶ</button><button id="clear-subs" hidden>外す</button></div></div>
@@ -108,7 +121,7 @@ dialog .btns .p{background:var(--accent);border-color:var(--accent);color:#fff;f
     <button id="start" disabled>候補を作る</button>
     <section class="job" id="job" hidden aria-live="polite">
       <h2 id="job-title">候補を作っています</h2>
-      <div class="stg"><span data-s="prepare">準備</span><span data-s="model">文字起こしの準備</span><span data-s="transcribe">文字起こし</span><span data-s="candidates">候補づくり</span></div>
+      <div class="stg" id="stg"></div>
       <div class="bar" id="bar"><i id="bar-i"></i></div>
       <p class="msg" id="job-msg"></p>
       <p class="note" id="job-note">この画面は閉じずにお待ちください。終わると自動でレビュー画面に進みます。</p>
@@ -124,8 +137,12 @@ dialog .btns .p{background:var(--accent);border-color:var(--accent);color:#fff;f
 </dialog>
 <script>
 const $ = id => document.getElementById(id);
-const S = {video: '', subs: '', job: null, t0: 0};
-const ORDER = ['prepare', 'model', 'transcribe', 'candidates', 'done'];
+const S = {video: '', subs: '', url: '', job: null, t0: 0};
+const ORDER = ['chat', 'fetch', 'prepare', 'model', 'transcribe', 'candidates', 'done'];
+const STAGES = {
+  file: [['prepare', '準備'], ['model', '文字起こしの準備'], ['transcribe', '文字起こし'], ['candidates', '候補づくり']],
+  url: [['chat', '確認とチャット'], ['fetch', '動画を取得'], ['model', '文字起こしの準備'], ['transcribe', '文字起こし'], ['candidates', '候補づくり']],
+};
 const fmt = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}分${String(s % 60).padStart(2, '0')}秒`; };
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const post = (url, body) => fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})}).then(r => r.json());
@@ -177,12 +194,38 @@ async function pollUpdate() {
   setTimeout(pollUpdate, 700);
 }
 
+function ready() {
+  const ok = !!(S.video || S.url);
+  $('start').disabled = !ok; $('s1').classList.toggle('on', !ok); $('s2').classList.toggle('on', ok);
+}
 function setVideo(p) {
   S.video = p; $('pick').classList.toggle('has', !!p);
+  if (p && S.url) { $('url').value = ''; setUrl('', ''); }
   $('pick-title').textContent = p ? base(p) : '動画を選ぶ';
   $('pick-sub').textContent = p ? 'クリックで選び直す' : 'クリックして選ぶ（またはここに動画をドラッグ）';
-  $('start').disabled = !p; $('s1').classList.toggle('on', !p); $('s2').classList.toggle('on', !!p);
+  ready();
 }
+// Twitch の URL（B-012）: 貼ったらすぐ判定し、取り込めるかを1行で出す
+function setUrl(url, msg, ok) {
+  S.url = url; $('url-row').classList.toggle('has', !!url);
+  $('url-st').textContent = msg || ''; $('url-st').className = 'url-st' + (msg ? (ok ? ' ok' : ' ng') : '');
+  $('pick-subs').disabled = !!url;
+  if (url) setSubs(''); $('subs-val').textContent = url ? 'URL のときは使いません' : (S.subs ? base(S.subs) : 'なし（自動で文字起こし）');
+  ready();
+}
+let urlTimer;
+$('url').addEventListener('input', () => {
+  clearTimeout(urlTimer);
+  urlTimer = setTimeout(async () => {
+    const v = $('url').value.trim();
+    if (!v) { setUrl('', ''); return; }
+    const r = await post('/api/url/check', {url: v});
+    if (r.kind === 'vod') {
+      if (S.video) setVideo('');
+      setUrl(r.url, `✓ videos/${r.id} の動画とチャットを取り込みます（アーカイブは7〜60日で消えるので早めに）`, true);
+    } else setUrl('', r.message, false);
+  }, 250);
+});
 function setSubs(p) {
   S.subs = p; $('subs-val').textContent = p ? base(p) : 'なし（自動で文字起こし）'; $('clear-subs').hidden = !p;
 }
@@ -203,26 +246,30 @@ $('pick').addEventListener('drop', e => {
 
 $('start').onclick = async () => {
   $('err').hidden = true; $('start').disabled = true;
-  const r = await post('/api/jobs', {video: S.video, subs: S.subs, credit: $('credit').value.trim()});
+  const credit = $('credit').value.trim();
+  const r = await post('/api/jobs', S.url ? {url: S.url, credit} : {video: S.video, subs: S.subs, credit});
   if (r.error) { showErr(r.error); $('start').disabled = false; return; }
   watch(r);
 };
 
 function watch(job) {
   S.job = job; S.t0 = job.started ? job.started * 1000 : Date.now();
-  $('job').hidden = false; $('start').hidden = true; $('pick').disabled = true;
+  $('job').hidden = false; $('start').hidden = true; $('pick').disabled = true; $('url').disabled = true;
+  $('stg').innerHTML = STAGES[job.kind === 'url' ? 'url' : 'file'].map(([k, t]) => `<span data-s="${k}">${t}</span>`).join('');
   $('job-title').textContent = `「${job.video || ''}」の候補を作っています`;
   tick();
 }
 async function tick() {
   const j = await (await fetch('/api/jobs/' + S.job.id)).json();
   if (j.error) { failed(j); return; }
+  if (j.video) $('job-title').textContent = `「${j.video}」の候補を作っています`;
+  if (j.warning) $('job-note').textContent = j.warning + '。この画面は閉じずにお待ちください。';
   const i = ORDER.indexOf(j.stage);
   document.querySelectorAll('.stg span').forEach(s => {
     const k = ORDER.indexOf(s.dataset.s); s.className = k < i ? 'ok' : (k === i ? 'now' : '');
     if (k < i) s.textContent = s.textContent.replace(/^✓ /, '') .replace(/^/, '✓ ');
   });
-  const ind = j.stage === 'model' || j.stage === 'prepare' || (j.stage === 'candidates' && j.pct < 100);
+  const ind = j.stage === 'model' || j.stage === 'prepare' || (j.stage === 'candidates' && j.pct < 100) || ((j.stage === 'chat' || j.stage === 'fetch') && !j.pct);
   $('bar').classList.toggle('ind', ind); $('bar-i').style.width = ind ? '' : (j.stage === 'done' ? 100 : j.pct) + '%';
   $('job-msg').textContent = `${j.message}（経過 ${fmt((Date.now() - S.t0) / 1000)}）`;
   if (j.done) { $('job-msg').textContent = j.message + '。レビュー画面に進みます…'; setTimeout(() => location.href = '/review?w=' + encodeURIComponent(j.workdir), 800); return; }
@@ -237,7 +284,7 @@ function failed(j) {
   $('job-title').textContent = '候補づくりに失敗しました';
   $('job-msg').textContent = ''; $('job-note').textContent = '';
   showErr(`うまくいきませんでした: ${j.error}\n\nもう一度試しても同じ場合は、このメッセージと次のファイルの内容を Claude に伝えてください。\n${S.log || ''}`);
-  $('start').hidden = false; $('start').disabled = false; $('start').textContent = 'もう一度試す'; $('pick').disabled = false;
+  $('start').hidden = false; $('start').disabled = false; $('start').textContent = 'もう一度試す'; $('pick').disabled = false; $('url').disabled = false;
 }
 
 $('settings').onclick = () => $('dlg').showModal();

@@ -1,7 +1,7 @@
 """コマンドライン（開発・上級者向け。通常はアプリ clipper.exe から使う）。
 
   python -m clipper app                                 アプリとして起動（ホーム画面）
-  python -m clipper run <動画ファイル|URL> [--subs 字幕.srt|.vtt] [--scorer auto|llm|rule] [--credit "出典: ○○"]
+  python -m clipper run <動画ファイル|URL（Twitch のアーカイブはチャットも使う）> [--subs 字幕.srt|.vtt] [--scorer auto|llm|rule] [--credit "出典: ○○"]
   python -m clipper review <作業フォルダ>
   python -m clipper render <作業フォルダ> [--layout band|crop]
 """
@@ -57,8 +57,22 @@ def cmd_run(a) -> None:
     wdp.mkdir(parents=True, exist_ok=True)
     log(f"作業フォルダ: {wdp}")
     subs = Path(a.subs) if a.subs else None
-    extra = {}
-    if is_url(a.input):
+    extra, chat = {}, None
+    from . import twitch
+    tw = twitch.parse_url(a.input) if is_url(a.input) else {"kind": "file"}
+    if tw["kind"] == "vod":
+        log("Twitch のアーカイブを確認しています…")
+        info = twitch.fetch_info(tw["url"])
+        try:
+            c = twitch.fetch_chat(tw["id"], until=float(info.get("duration") or 0) or None)
+            chat = c["messages"]
+            log(f"チャット: {len(chat)} 件（{c['method']}）")
+        except twitch.TwitchError as e:
+            log(f"チャットを取得できなかったため、言葉だけで採点します（{e}）")
+        log("動画を取得中（yt-dlp・720p まで）…")
+        video, info = twitch.download_vod(tw["url"], wdp, info=info)
+        extra = {"title": info.get("title", ""), "channel": info.get("uploader", ""), "url": tw["url"], "platform": "twitch"}
+    elif is_url(a.input):
         log("動画を取得中（yt-dlp）…")
         video, auto_subs, extra = download(a.input, wdp)
         subs = subs or auto_subs
@@ -73,7 +87,7 @@ def cmd_run(a) -> None:
             last["stage"] = stage
 
     wd = build(video, wdp, subs, credit=a.credit or "", scorer=a.scorer, model=a.model, n=a.n,
-               meta_extra=extra, progress=progress, log=log)
+               meta_extra=extra, progress=progress, log=log, chat=chat)
     for c in wd.read("candidates.json"):
         log(f"   {c['id']} {c['score']:>3}点 {c['start']:7.1f}〜{c['end']:7.1f}s {c['title']}")
     if not a.no_review:

@@ -62,3 +62,42 @@ def test_speed_60min(sents):
     cands = rule_candidates(long, span * 10)
     assert time.time() - t < 5.0
     assert len(cands) == n_candidates(span * 10)
+
+
+def burst_chat(duration, burst=(36.0, 62.0)):
+    """平常は3秒に1件。burst の間は0.3秒に1件（半分は「草」）。"""
+    msgs = [{"t": float(t), "text": "こんにちは"} for t in range(0, int(duration), 3)]
+    k, t = 0, burst[0]
+    while t < burst[1]:
+        msgs.append({"t": t, "text": "草" if k % 2 else "すごい"})
+        k += 1
+        t += 0.3
+    return msgs
+
+
+def test_chat_burst_selects_topic_block(sents, expected):
+    """B-012 AC4: 雑談の区間（28〜61秒の近況）の直後にチャットの山を置くと、その話題のまとまりが候補に入る。
+    山の一部だけにかかる区間（前の話題をくっつけたもの）ではなく、話題の切れ目どおりの区間になる。"""
+    from clipper.candidates import annotate_chat
+    from clipper.twitch import ChatSignal
+    base = rule_candidates(sents, expected["duration"])
+    assert not any(c["start"] < 50 and c["end"] > 40 for c in base)          # チャットなしでは候補にならない区間
+    sig = ChatSignal(burst_chat(expected["duration"]), expected["duration"])
+    cands = annotate_chat(rule_candidates(sents, expected["duration"], chat=sig), sig)
+    hot = [c for c in cands if c["reasons"] and c["reasons"][0].startswith("チャット ×")]
+    assert len(hot) == 1, [(c["start"], c["end"], c["reasons"]) for c in cands]
+    h = hot[0]
+    assert 27.0 <= h["start"] <= 29.0 and 60.0 <= h["end"] <= 62.5, h          # 近況の話（文7〜13）ちょうど
+    assert "−話題をまたぐ" not in h["reasons"] and h["chat"]["capture"] >= 0.9
+    # 仕込んだ見どころ（駅の話・ランキングなど）は引き続き入る
+    assert len(cands) == expected["n_candidates"]
+    hits = {k for k, r in expected["highlights"].items()
+            for c in cands if _cover(c, r) >= 0.6 * (r["end"] - r["start"])}
+    assert len(hits) >= expected["min_highlight_hits"], sorted(hits)
+
+
+def test_no_chat_keeps_previous_result(sents, expected):
+    from clipper.candidates import annotate_chat
+    a = rule_candidates(sents, expected["duration"])
+    b = annotate_chat(rule_candidates(sents, expected["duration"], chat=None), None)
+    assert [(c["start"], c["end"], c["score"]) for c in a] == [(c["start"], c["end"], c["score"]) for c in b]

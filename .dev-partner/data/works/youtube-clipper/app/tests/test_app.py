@@ -6,6 +6,7 @@ import threading
 import time
 import urllib.request
 from pathlib import Path
+from urllib.parse import quote
 
 import pytest
 
@@ -182,3 +183,115 @@ def test_home_ui_shows_failure(env, tmp_path):
     assert "うまくいきませんでした" in res["err"] and "clipper.log" in res["err"]
     assert res["animating"] is False and res["failedStage"] and res["retry"] == "もう一度試す"
     assert res["title"] == "候補づくりに失敗しました"
+
+
+# ---------------------------------------------------------------- B-012: Twitch の URL から
+def fake_twitch(sample_video, chat_ok=True, video_error=None):
+    """Twitch の取得部分だけを差し替える（URL の判定とエラーの型は本物）。"""
+    from types import SimpleNamespace
+    from clipper import twitch as T
+    from test_candidates import burst_chat
+    calls = []
+
+    def fetch_info(url):
+        calls.append(("info", url))
+        return {"id": "v123", "title": "雑談配信 テスト", "uploader": "テスト配信者", "duration": 368.15}
+
+    def fetch_chat(vid, until=None, progress=None, **kw):
+        calls.append(("chat", vid, until))
+        if not chat_ok:
+            raise T.TwitchError("failed integrity check")
+        progress and progress(50.0, "チャットを取得しています（100件）")
+        return {"messages": burst_chat(368.15), "method": "persisted/offset", "pages": 3, "notes": []}
+
+    def download_vod(url, dest, progress=None, info=None, **kw):
+        calls.append(("video", url))
+        if video_error:
+            raise T.TwitchError(video_error)
+        progress and progress(40.0, "動画を取得しています（10MB）")
+        dest.mkdir(parents=True, exist_ok=True)
+        shutil.copy(sample_video, dest / "source.mp4")
+        return dest / "source.mp4", info
+
+    return SimpleNamespace(parse_url=T.parse_url, TwitchError=T.TwitchError, fetch_info=fetch_info,
+                           fetch_chat=fetch_chat, download_vod=download_vod, calls=calls)
+
+
+@pytest.fixture
+def with_subs(monkeypatch):
+    """この環境には文字起こしのモデルがないので、見本の字幕を使わせる（取得から候補までの流れを確かめる）。"""
+    import clipper.app as app_mod
+    real = app_mod.build
+    monkeypatch.setattr(app_mod, "build", lambda video, wdp, subs=None, **kw: real(video, wdp, SAMPLES / "talk_sample.srt", **kw))
+
+
+def wait_job(port, jid, secs=60):
+    for _ in range(secs * 5):
+        j = call(port, f"/api/jobs/{jid}")
+        if j["done"] or j["error"]:
+            return j
+        time.sleep(0.2)
+    return j
+
+
+def test_url_job_api_flow(env, sample_video, with_subs):
+    """B-012 AC6・AC7（API）: URL から 確認 → チャット → 動画 → 候補。理由にチャットの倍率。出典は配信者名。"""
+    srv, app, port = start()
+    try:
+        app.twitch = tw = fake_twitch(sample_video)
+        chk = call(port, "/api/url/check", {"url": "https://www.twitch.tv/videos/123"})
+        assert chk["kind"] == "vod" and chk["id"] == "123"
+        bad = call(port, "/api/url/check", {"url": "https://clips.twitch.tv/abc"})
+        assert bad["kind"] == "clip" and "アーカイブ" in bad["message"]
+        with pytest.raises(urllib.error.HTTPError) as e:            # 取り込めない URL は始めない
+            call(port, "/api/jobs", {"url": "https://www.youtube.com/watch?v=x"})
+        assert e.value.code == 400
+        job = call(port, "/api/jobs", {"url": "https://www.twitch.tv/videos/123", "credit": ""})
+        assert job["kind"] == "url"
+        j = wait_job(port, job["id"])
+        assert j["done"] and not j["error"] and not j["warning"], j
+        assert [c[0] for c in tw.calls] == ["info", "chat", "video"] and tw.calls[1][2] == 368.15
+        st = call(port, f"/api/w/{quote(j['workdir'])}/state")
+        assert st["meta"]["platform"] == "twitch" and st["meta"]["credit"] == "出典: テスト配信者"
+        assert st["meta"]["title"] == "雑談配信 テスト"
+        assert any(c["reasons"][:1] and c["reasons"][0].startswith("チャット ×") for c in st["clips"]), st["clips"]
+        wd = Path(call(port, "/api/home")["home"]) / j["workdir"]
+        assert (wd / "chat_messages.json").exists() and (wd / "chat.json").exists()
+    finally:
+        srv.shutdown()
+
+
+def test_url_job_chat_failure_continues_and_video_failure_explains(env, sample_video, with_subs):
+    """B-012 AC7: チャットだけ失敗 → 警告を出して言葉だけで続ける。動画の失敗 → 理由を1文で出す。"""
+    srv, app, port = start()
+    try:
+        app.twitch = fake_twitch(sample_video, chat_ok=False)
+        j = wait_job(port, call(port, "/api/jobs", {"url": "https://www.twitch.tv/videos/123"})["id"])
+        assert j["done"] and "言葉だけで採点" in j["warning"]
+        st = call(port, f"/api/w/{quote(j['workdir'])}/state")
+        assert not any(r.startswith("チャット") for c in st["clips"] for r in c["reasons"])
+        app.twitch = fake_twitch(sample_video, video_error="アーカイブが見つかりません。期限（通常7〜60日）が過ぎて消えたか、非公開にされた可能性があります")
+        j = wait_job(port, call(port, "/api/jobs", {"url": "https://www.twitch.tv/videos/124"})["id"])
+        assert j["error"].startswith("アーカイブが見つかりません") and not j["done"]
+    finally:
+        srv.shutdown()
+
+
+def test_home_ui_url_flow(env, sample_video, with_subs):
+    """B-012 AC6（画面）: URL を貼る → 「候補を作る」の2操作で、段階が順に出てレビュー画面に進む。"""
+    srv, app, port = start()
+    app.twitch = fake_twitch(sample_video)
+    try:
+        r = subprocess.run(["node", str(HERE / "ui_home_url.cjs"), f"http://127.0.0.1:{port}/", str(env / "home_url.png")],
+                           capture_output=True, text=True, timeout=180)
+        assert r.returncode == 0, r.stderr
+        res = json.loads(r.stdout.strip().splitlines()[-1])
+    finally:
+        srv.shutdown()
+    assert res["errors"] == []
+    assert res["badMsg"] and "クリップ" in res["badMsg"] and res["startDisabledOnBad"] is True
+    assert "videos/987" in res["okMsg"] and res["clicks"] == 2
+    assert res["stgKeys"] == ["chat", "fetch", "model", "transcribe", "candidates"], res   # URL のときの段階の表示
+    assert "fetch" in res["stagesSeen"], res
+    assert res["startHiddenDuringJob"] and res["jobInView"], res      # 処理中の表示がファーストビューに出る
+    assert res["reachedReview"] and res["chatReason"]

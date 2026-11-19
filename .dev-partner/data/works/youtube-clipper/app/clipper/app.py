@@ -8,7 +8,8 @@ API:
   GET  /api/update                  新しい版があるか（10分キャッシュ）／ POST /api/update/apply で更新／ GET /api/update/state
   POST /api/pick      {kind}        Windows 標準のファイル選択画面を出し、選ばれたパスを返す
   POST /api/upload?name=…           ドラッグ＆ドロップされた動画を作業用にコピーする
-  POST /api/jobs      {video,subs,credit}   候補づくりを始める
+  POST /api/jobs      {video,subs,credit} または {url,credit}   候補づくりを始める（url は Twitch のアーカイブ。B-012）
+  POST /api/url/check {url}         貼られた URL が取り込めるか（通信しない判定）
   GET  /api/jobs/<id>               進み具合
   GET  /api/w/<id>/state, POST /api/w/<id>/decision, GET|POST /api/w/<id>/render
   GET  /media/w/<id>/source         動画（Range 対応）
@@ -32,6 +33,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from . import paths
+from . import twitch as twitch_mod
 from .pipeline import build, workdir_for
 from .updater import Updater
 from .workdir import Workdir
@@ -84,6 +86,7 @@ class App:
         self.updater = Updater()         # アプリ内の更新（B-013）。テストで差し替える
         self.picker = native_pick        # テストで差し替える
         self.opener = open_folder        # テストで差し替える
+        self.twitch = twitch_mod         # Twitch の取り込み（B-012）。テストで差し替える
         self.lock = threading.Lock()
         self.server: ThreadingHTTPServer | None = None
         self.stopped = False
@@ -132,7 +135,7 @@ class App:
             raise FileNotFoundError(f"字幕ファイルが見つかりません: {subs}")
         jid = uuid.uuid4().hex[:8]
         wdp = workdir_for(vid, self.home)
-        job = {"id": jid, "stage": "prepare", "pct": 0, "message": "準備しています", "done": False, "error": "",
+        job = {"id": jid, "kind": "file", "stage": "prepare", "pct": 0, "message": "準備しています", "done": False, "error": "",
                "workdir": wdp.name, "started": time.time(), "video": vid.name}
         self.jobs[jid] = job
 
@@ -149,6 +152,57 @@ class App:
                 job["trace"] = traceback.format_exc()[-2000:]
                 import logging
                 logging.getLogger("clipper").error("job %s failed (%s): %s\n%s", jid, vid.name, job["error"], job["trace"])
+        threading.Thread(target=run, daemon=True).start()
+        return job
+
+    def start_url_job(self, url: str, credit: str = "") -> dict:
+        """Twitch のアーカイブを取り込んで候補を作る（B-012）: 確認 → チャット → 動画 → 文字起こし → 候補。
+        チャットが取れなくても、言葉だけで採点して続ける。"""
+        tw = self.twitch
+        r = tw.parse_url(url)
+        if r["kind"] != "vod":
+            raise ValueError(r["message"])
+        jid = uuid.uuid4().hex[:8]
+        job = {"id": jid, "kind": "url", "stage": "chat", "pct": 0, "message": "アーカイブを確認しています", "done": False,
+               "error": "", "warning": "", "workdir": "", "started": time.time(), "video": f"Twitch videos/{r['id']}",
+               "url": r["url"]}
+        self.jobs[jid] = job
+
+        def progress(stage, pct, msg):
+            job.update(stage=stage, pct=round(float(pct), 1), message=msg)
+
+        def run():
+            import logging
+            log = logging.getLogger("clipper")
+            try:
+                info = tw.fetch_info(r["url"])
+                title = str(info.get("title") or f"twitch_{r['id']}")
+                job["video"] = title
+                wdp = workdir_for(Path(title + ".mp4"), self.home)
+                wdp.mkdir(parents=True, exist_ok=True)
+                job["workdir"] = wdp.name
+                dur = float(info.get("duration") or 0) or None
+                chat = []
+                try:
+                    progress("chat", 0, "チャットを取得しています")
+                    c = tw.fetch_chat(r["id"], until=dur, progress=lambda p, m: progress("chat", p, m))
+                    chat = c["messages"]
+                    (wdp / "chat_messages.json").write_text(json.dumps(c, ensure_ascii=False), encoding="utf-8")
+                    log.info("chat %s: %d messages (%s)", r["id"], len(chat), c.get("method"))
+                except Exception as e:  # チャットは補助。取れなくても続ける
+                    job["warning"] = "チャットを取得できなかったため、言葉だけで採点します"
+                    log.warning("chat failed %s: %s", r["id"], e)
+                progress("fetch", 0, "動画を取得しています")
+                video, info = tw.download_vod(r["url"], wdp, progress=lambda p, m: progress("fetch", p, m), info=info)
+                extra = {"title": title, "channel": str(info.get("uploader") or info.get("channel") or ""),
+                         "url": r["url"], "platform": "twitch"}
+                build(video, wdp, None, credit=credit, progress=progress, log=lambda *a: None, meta_extra=extra, chat=chat)
+                job["workdir"] = self.register(wdp)
+                job["done"] = True
+            except Exception as e:
+                job["error"] = str(e) if isinstance(e, tw.TwitchError) else f"{type(e).__name__}: {e}"
+                job["trace"] = traceback.format_exc()[-2000:]
+                log.error("url job %s failed (%s): %s\n%s", jid, r["url"], job["error"], job["trace"])
         threading.Thread(target=run, daemon=True).start()
         return job
 
@@ -245,7 +299,11 @@ def make_handler(app: App):
                     b = self._body()
                     if b.get("credit") is not None:
                         cfg = paths.load_config(); cfg["credit"] = b["credit"]; paths.save_config(cfg)
+                    if b.get("url"):
+                        return self._json(app.start_url_job(b["url"], b.get("credit", "")))
                     return self._json(app.start_job(b.get("video", ""), b.get("subs", ""), b.get("credit", "")))
+                if u.path == "/api/url/check":
+                    return self._json(app.twitch.parse_url(self._body().get("url", "")))
                 if u.path == "/api/open":
                     w = app.wd(self._body()["w"])
                     out = w.path / "out"
@@ -277,7 +335,7 @@ def make_handler(app: App):
                 return self._json({"error": "not found"}, 404)
             except KeyError:
                 return self._json({"error": "作業が見つかりません"}, 404)
-            except FileNotFoundError as e:
+            except (FileNotFoundError, ValueError) as e:
                 return self._json({"error": str(e)}, 400)
 
         def _render_bg(self, w: Workdir):

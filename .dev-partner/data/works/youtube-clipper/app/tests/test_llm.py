@@ -69,3 +69,20 @@ def test_normalize_fixes_bad_ranges(sents, expected):
         assert len(c["title"]) <= C.TITLE_LINE_CHARS * C.TITLE_LINES
     s = sorted(out, key=lambda c: c["start_sid"])
     assert all(a["end_sid"] < b["start_sid"] for a, b in zip(s, s[1:]))
+
+
+def test_prompt_includes_chat_marks(sents, expected):
+    """B-012 AC5: チャットが盛り上がった文に「💬×N」が付き、system に意味の説明が入る。"""
+    from clipper.twitch import ChatSignal
+    from test_candidates import burst_chat
+    sig = ChatSignal(burst_chat(expected["duration"]), expected["duration"])
+    res = LlmResult(candidates=[LlmCandidate(start_id=7, end_id=13, score=80, title="雨の週の話", reasons=["盛り上がり"])])
+    client, m = fake_client(result=res)
+    llm_candidates(sents, 5, "配信", client=client, log=lambda *_: None, chat=sig)
+    content = m.kwargs["messages"][0]["content"]
+    marked = [ln for ln in content.splitlines() if "💬×" in ln]
+    assert marked and all(ln.split("]")[0].strip("[") in {str(i) for i in range(5, 14)} for ln in marked), marked
+    assert "チャット" in m.kwargs["system"]
+    client, m = fake_client(result=res)
+    llm_candidates(sents, 5, "配信", client=client, log=lambda *_: None)
+    assert "💬" not in m.kwargs["messages"][0]["content"] and "チャット" not in m.kwargs["system"]
