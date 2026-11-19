@@ -15,6 +15,7 @@
 | `cilog.py` | GitHub Actions のジョブログ（数十万字の1行）を行に戻し、エラー行・指定した語の前後・JSON の塊（selftest.json など）だけを表示。最後に読んだ範囲を表示 | CI が失敗したとき、CI の結果を報告に書くとき | B-008 で巨大なログを手書きのスクリプトで2回解析した（繰り返し作業）。CI を使う案件で毎回使う見込み | 2026-11-19 作成 |
 | `knowledge/web-ui.md` | ローカルWebアプリの画面の落とし穴（重ね表示と重なり順、ファーストビュー、Playwright のテストの注意） | 画面のあるツールの手順0 | B-008 のガイドの重なり順の不具合と、観測が結果を変えるテスト。B-001 のボタンが画面外だった件 | 2026-11-19 作成 |
 | `knowledge/windows-app.md` | Python のツールを Windows アプリ（exe・インストーラー）にし、GitHub Actions の Windows で自己テストまで行う構成と注意点。アプリ内の更新（Releases ＋1クリック更新）の構成と、その CI での確かめ方 | ユーザーが Windows で、配布・販売の可能性がある案件の手順0 | B-008 で一通り確かめた構成。このクラウド環境では Windows で試せないため、次の Windows 案件でも同じ仕組みを使う | 2026-11-19 作成 |
+| `knowledge/twitch.md` | Twitch のアーカイブの取り込み（yt-dlp での動画、GraphQL でのチャット、チャットを盛り上がりの信号にする数値）と、この環境から確かめる方法 | Twitch・配信のアーカイブを扱う案件の手順0 | B-012 で本物の Twitch に対して確かめた（カーソル送りは断られ、時刻送りは通る など）。調べ直すと時間がかかり、外れると取得が全滅する | 2026-11-19 作成 |
 
 ## 使い方メモ
 ```bash
@@ -35,3 +36,4 @@ python3 ~/.claude/dev-partner/toolkit/cilog.py <保存されたジョブログ> 
 - 2026-11-19 B-001 完了後の環境改善: tune-panel を新規作成（B-002）、shot.cjs に `--must-see` を追加（レビュー画面の操作ボタンが画面外だった失敗への対策）、knowledge/ に2件追加
 - 2026-11-19 B-008 完了後の環境改善: cilog.py を新規作成（巨大な CI ログの解析を2回手作業した）、knowledge/ に web-ui.md と windows-app.md を追加
 - 2026-11-19 B-013 完了後の環境改善: shot.cjs の `--must-see` に下端の余白の確認（`--edge`）を追加（帯を足して「候補を作る」が下端まで押し出されたのに OK だった。直す前の画面だけに警告が出ることを確認済み）。knowledge/windows-app.md にアプリ内の更新の節、web-ui.md に grid の行数の注意を追加
+- 2026-11-19 B-012 完了後の環境改善: knowledge/twitch.md を新規作成。web-ui.md に hidden 属性の落とし穴を追加。画面の HTML（clipper の home・review）に `[hidden]{display:none!important}` を入れた
