@@ -2,6 +2,7 @@
 
 - ローカル（Linux）: `python -m pytest -q tests` → **71 passed**（43件から28件増）
 - 本物の Twitch（下調べ・GitHub Actions の ubuntu）: [run 44576135531](https://github.com/sakaryo0613-coder/bon2/actions/runs/44576135531) → 情報・チャット・動画の冒頭を取得
+- main: [run 44581077667](https://github.com/sakaryo0613-coder/bon2/actions/runs/44581077667) → 全工程 success。Release **clipper-v0.3.14**（181,601,882 バイト）を公開。ログインなしで取得でき、v0.3.10 のアプリの更新処理（本物の GitHub API）が新しい版と判定した
 - Windows（GitHub Actions・windows-latest）: [run 44579022203](https://github.com/sakaryo0613-coder/bon2/actions/runs/44579022203) → **全工程 success**（head fadc0d0。その前の2回は push で取り消し）
 
 | # | 基準 | 結果 | 根拠 |
