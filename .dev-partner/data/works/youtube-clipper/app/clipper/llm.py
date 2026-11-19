@@ -41,14 +41,25 @@ def _fmt(t: float) -> str:
     return f"{int(h):d}:{int(m):02d}:{s:04.1f}"
 
 
-def build_prompt(sents: list[dict], n: int, video_title: str = "") -> str:
-    lines = [f"[{s['id']}] ({_fmt(s['start'])}–{_fmt(s['end'])}) {s['text']}" for s in sents]
+CHAT_NOTE = """
+- 文の末尾の「💬×N」は、その直後に視聴者のチャットが平常の N 倍に増えたこと（配信のアーカイブ）。
+  言葉だけでは分からない見どころ（ゲームの山場、視聴者が沸いた瞬間）の手がかりとして重視する。ただし話が単体で分かることを優先する"""
+CHAT_MARK = 1.5   # この倍率以上の文に印を付ける
+
+
+def build_prompt(sents: list[dict], n: int, video_title: str = "", chat=None) -> str:
+    def mark(s):
+        if chat is None or not len(chat):
+            return ""
+        m = chat.measure(s["start"], s["end"])
+        return f" 💬×{m['ratio']:.1f}" if m["count"] >= 3 and m["ratio"] >= CHAT_MARK else ""
+    lines = [f"[{s['id']}] ({_fmt(s['start'])}–{_fmt(s['end'])}) {s['text']}{mark(s)}" for s in sents]
     head = f"動画タイトル: {video_title}\n" if video_title else ""
     return (f"{head}次の文字起こしから、ショート動画の候補を {n + 4} 個まで選んでください（良い順でなくてよい）。\n\n"
             + "\n".join(lines))
 
 
-def llm_candidates(sents: list[dict], n: int, video_title: str = "", client=None, log=print) -> list[dict] | None:
+def llm_candidates(sents: list[dict], n: int, video_title: str = "", client=None, log=print, chat=None) -> list[dict] | None:
     try:
         import anthropic
     except ImportError:
@@ -62,8 +73,9 @@ def llm_candidates(sents: list[dict], n: int, video_title: str = "", client=None
             output_config={"effort": C.LLM_EFFORT},
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",   # 安全分類で拒否されたときはサーバー側で別モデルに切り替える
-            system=SYSTEM.format(min=C.CLIP_MIN, max=C.CLIP_MAX, title_max=C.TITLE_LINE_CHARS * C.TITLE_LINES),
-            messages=[{"role": "user", "content": build_prompt(sents, n, video_title)}],
+            system=SYSTEM.format(min=C.CLIP_MIN, max=C.CLIP_MAX, title_max=C.TITLE_LINE_CHARS * C.TITLE_LINES)
+            + (CHAT_NOTE if chat is not None and len(chat) else ""),
+            messages=[{"role": "user", "content": build_prompt(sents, n, video_title, chat)}],
             output_format=LlmResult,
         )
     except anthropic.AuthenticationError:

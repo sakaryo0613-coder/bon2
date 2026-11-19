@@ -310,19 +310,18 @@ class ChatSignal:
 PROBE_CHANNELS = ("fps_shaka", "stylishnoob4", "kato_junichi0817", "twitchjapan", "shroud", "summit1g")
 
 
-def find_recent_vod(channels=PROBE_CHANNELS) -> str | None:
-    """公開のアーカイブを1つ探す（期限で消えるので、固定の URL は使えない）。"""
+def recent_vods(channels=PROBE_CHANNELS, per_channel: int = 3):
+    """公開のアーカイブの URL を順に返す（期限で消えるので、固定の URL は使えない）。配信中のものも混ざる。"""
     for ch in channels:
         try:
-            with _ydl({"extract_flat": True, "playlistend": 3}) as y:
+            with _ydl({"extract_flat": True, "playlistend": per_channel}) as y:
                 res = y.extract_info(f"https://www.twitch.tv/{ch}/videos?filter=archives&sort=time", download=False)
-            for e in res.get("entries") or []:
-                url = e.get("url") or ""
-                if parse_url(url)["kind"] == "vod":
-                    return parse_url(url)["url"]
         except Exception:
             continue
-    return None
+        for e in res.get("entries") or []:
+            r = parse_url(e.get("url") or "")
+            if r["kind"] == "vod":
+                yield r["url"]
 
 
 def probe(outdir: Path, url: str | None = None, chat_until: float = 600.0, video_secs: float = 20.0) -> dict:
@@ -336,10 +335,16 @@ def probe(outdir: Path, url: str | None = None, chat_until: float = 600.0, video
             res["errors"].append(f"{name}: {str(detail)[:300]}")
 
     try:
-        url = url or find_recent_vod()
-        check("vod_found", url, url)
-        if url:
-            info = fetch_info(url)
+        info, skipped = None, []
+        for u in ([url] if url else recent_vods()):
+            try:
+                info = fetch_info(u)
+                url = u
+                break
+            except TwitchError as e:          # 配信中・サブスク限定などは飛ばして次へ
+                skipped.append(f"{u}: {e}")
+        check("vod_found", info, {"url": url, "skipped": skipped})
+        if info:
             check("info", info.get("duration"), {k: info.get(k) for k in ("id", "title", "uploader", "duration")})
             vid = parse_url(url)["id"]
             t0 = time.time()

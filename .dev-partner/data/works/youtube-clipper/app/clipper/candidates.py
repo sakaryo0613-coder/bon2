@@ -128,7 +128,8 @@ def select(scored: list[dict], n: int) -> list[dict]:
     return chosen
 
 
-def rule_candidates(sents: list[dict], duration: float, n: int | None = None) -> list[dict]:
+def rule_candidates(sents: list[dict], duration: float, n: int | None = None, chat=None) -> list[dict]:
+    """chat: twitch.ChatSignal（あれば、チャットの盛り上がりを加点する）"""
     n = n or n_candidates(duration)
     starts = topic_starts(sents)
     scored = []
@@ -136,6 +137,9 @@ def rule_candidates(sents: list[dict], duration: float, n: int | None = None) ->
         ss = sents[a:b + 1]
         ends_topic = b + 1 >= len(sents) or starts[b + 1]
         sc, why = rule_score(ss, e - s, starts[a:b + 1], ends_topic)
+        if chat is not None and len(chat):
+            pts, cwhy, _ = chat.bonus(s, e)
+            sc, why = max(0, min(100, sc + pts)), why + cwhy
         scored.append({"start_sid": a, "end_sid": b, "start": s, "end": e, "duration": round(e - s, 3),
                        "score": sc, "reasons": why, "scorer": "rule"})
     chosen = select(scored, n)
@@ -170,3 +174,14 @@ def normalize(raw: list[dict], sents: list[dict], duration: float, n: int) -> li
                       "score": int(max(0, min(100, r.get("score", 50)))), "reasons": list(r.get("reasons") or [])[:4],
                       "title": title, "scorer": r.get("scorer", "llm")})
     return select(fixed, n)
+
+
+def annotate_chat(cands: list[dict], chat) -> list[dict]:
+    """候補にチャットの反応（倍率・件数）を付け、盛り上がっていれば理由の先頭に出す（Claude の採点でも同じ表示にする）。"""
+    if chat is None or not len(chat):
+        return cands
+    for c in cands:
+        pts, cwhy, m = chat.bonus(c["start"], c["end"])
+        c["chat"] = m
+        c["reasons"] = cwhy + [r for r in c.get("reasons", []) if not r.startswith("チャット")]
+    return cands
