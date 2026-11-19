@@ -7,6 +7,7 @@
 |---|---|---|---|---|
 | P-000 | dev-partner（モノを作り続ける仕組み） | 環境 | 稼働中 | `bon2/.dev-partner/`（`~/.claude/skills/dev-partner`、`~/.claude/dev-partner` からリンク） |
 | P-001 | 浅草シーシャbon 公式サイト | Webサイト | 公開中（既存・取り込み） | `bon2/index.html`（GitHub Pages） |
+| P-002 | clipper（YouTube切り抜きツール） | ローカルツール（Python＋ブラウザ） | 第1段階完了・実機確認待ち | `~/.claude/dev-partner/works/youtube-clipper/app/` |
 
 ---
 
@@ -29,3 +30,17 @@
 - 保存場所: `bon2/index.html`（GitHub Pages、main ブランチ）
 - 由来: ユーザーがアップロードした既存のサイト（dev-partner の手順では作っていない）。拡張・新規を判定するときの比較対象として登録
 - 登録: 2026-11-19
+
+## P-002 clipper（YouTube切り抜きツール）
+- 目的: 長尺動画から Shorts / TikTok / Reels 向けのクリップを、少ない手作業で毎週作り続ける
+- 対象ユーザー: 自分のチャンネル、または切り抜きの許諾を得たチャンネルを運用する個人。動画編集ソフトの細かい操作はしたくない人
+- 使う場面: 長尺動画（配信アーカイブ・トーク）を公開した後の切り抜き作業（自分のPCで実行）
+- 扱うデータ: 動画ファイル／URL、字幕・文字起こし（文単位）、候補（文IDの範囲・点数・タイトル）、採否、書き出した縦型動画
+- 主な機能:
+  - 文字起こし（faster-whisper、または既存の字幕）
+  - Claude（claude-opus-5-5）による候補の採点。使えないときはルール採点
+  - レビュー画面（キー操作で採否、文単位の伸縮、タイトル編集、区間の再生）
+  - 縦型 1080×1920 で書き出し（タイトル帯・字幕・出典・−14 LUFS）、説明文の下書き CSV
+- 保存場所: `~/.claude/dev-partner/works/youtube-clipper/`（実体は `bon2/.dev-partner/data/works/youtube-clipper/`）。コードは `app/`、レイアウト調整は `tune/tune.html`
+- 合格基準の要約: AC1〜AC10 を自動テスト25件で確認済み。AC11（faster-whisper）、AC12（yt-dlp）、Claude の実際の採点は、ユーザーのPCで確認する（B-004）
+- 作成: 2026-11-19（B-001・案D 第1段階）

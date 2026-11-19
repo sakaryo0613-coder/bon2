@@ -1,0 +1,20 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
+:root{--title-size:72px;--band-y:228px;--band-h:392px;--band-color:#E11D48;--bg:#101010;--sub-size:64px;--sub-y:1330px;--sub-outline:6px;--credit-size:32px;--credit-y:1276px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1920px;overflow:hidden;background:var(--bg);position:relative;font-family:"Hiragino Sans","Noto Sans CJK JP","Yu Gothic UI",Meiryo,sans-serif;color:#fff}
+.band{position:absolute;left:0;right:0;top:var(--band-y);height:var(--band-h);background:var(--band-color);display:grid;place-items:center;text-align:center}
+.title{font-size:var(--title-size);font-weight:800;line-height:1.25}
+.video{position:absolute;left:0;top:656px;width:1080px;height:608px;background:linear-gradient(135deg,#334155,#64748b 60%,#94a3b8);display:grid;place-items:center;font-size:40px;color:#e2e8f0}
+.credit{position:absolute;right:60px;top:var(--credit-y);font-size:var(--credit-size);opacity:.75;-webkit-text-stroke:2px rgba(0,0,0,.5);paint-order:stroke fill}
+.sub{position:absolute;left:60px;right:60px;top:var(--sub-y);text-align:center;font-size:var(--sub-size);font-weight:800;line-height:1.25;-webkit-text-stroke:calc(var(--sub-outline) * 2) #000;paint-order:stroke fill}
+.zone{display:none;position:absolute;left:0;right:0;background:rgba(255,0,0,.18);border:3px dashed rgba(255,80,80,.9);color:#fca5a5;font-size:30px;padding:16px}
+body.safe .zone{display:block}
+.z1{top:0;height:240px}.z2{top:1520px;bottom:0}
+</style></head><body>
+<div class="band"><div class="title">朝五時起きを一か月続けた<br>結果を発表します</div></div>
+<div class="video">16:9 の元動画（1080×608）</div>
+<div class="credit">出典: サンプルチャンネル</div>
+<div class="sub">でも結果的に、読んだ本が<br>一か月で八冊になりました。</div>
+<div class="zone z1">上部UI（検索・カメラ）に隠れる範囲</div>
+<div class="zone z2">下部UI（タイトル・チャンネル名・いいね等）に隠れる範囲</div>
+</body></html>
