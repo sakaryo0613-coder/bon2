@@ -27,7 +27,7 @@
 | インストーラー | Inno Setup 6（runner にあり、なければ choco）。`PrivilegesRequired=lowest`（管理者権限なし）、`Japanese.isl` | ショートカットの確認先は `%APPDATA%\Microsoft\Windows\Start Menu\Programs\` とデスクトップ |
 | 自己テスト | `アプリ.exe --selftest <dir>`: 同梱物だけで主要な処理を通し、`selftest.json` と終了コードで判定 | PowerShell では `Start-Process -Wait -PassThru` で終了コードを取る。`$args` は予約変数なので使わない |
 | 音声のテスト | `System.Speech` で英語の音声を作れる（Microsoft David/Zira あり） | 日本語の音声はない。日本語の精度は実機で確認 |
-| 署名 | なし（初回に SmartScreen「Windows によって PC が保護されました」→「詳細情報」→「実行」） | 販売前にコード署名証明書が必要（年2〜6万円程度） |
+| 署名 | なし（初回に SmartScreen「Windows によって PC が保護されました」→「詳細情報」→「実行」） | **ダウンロードの時点でも、ブラウザ（Chrome・Edge）が「このファイルは危険です」と止める**（B-004 の実機で発生）。回避するには、ダウンロード一覧から「保存／保持」を選ぶか、ソースから直接動かす。配布するなら署名は事実上必須（年2〜6万円程度。即時に警告を消すには EV 証明書が必要で、さらに高い） |
 
 ## CI の運用
 - `paths` で、案件のフォルダ（コード・サンプル）とワークフローが変わったときだけ動かす
