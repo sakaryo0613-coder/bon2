@@ -1,0 +1,3 @@
+# dev-partner: 分割スクショは再生成できるのでコミットしない（ファーストビュー画像のみ残す）
+.dev-partner/data/works/**/shots/*-p*.png
+__pycache__/
