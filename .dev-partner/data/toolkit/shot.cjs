@@ -4,7 +4,7 @@
  *
  * 使い方:
  *   node shot.cjs <file.html|URL> [--out DIR] [--widths 1280,390] [--height 800]
- *                 [--full] [--dpr 1] [--wait 600] [--must-see "#ok,#ng"]
+ *                 [--full] [--dpr 1] [--wait 600] [--must-see "#ok,#ng"] [--edge 48]
  *
  * 出力: DIR/<name>-<幅>.png（ファーストビュー。固定表示の要素も実際の位置で写る）と、標準出力にチェック結果。
  *       --full のときは全体を読めるサイズに分割した DIR/<name>-<幅>-p1.png, -p2.png … も保存する
@@ -15,7 +15,8 @@
  *   - 画面幅からはみ出している要素（上位5件）
  *   - 読み込みに失敗した画像
  *   - --must-see で指定した要素（主要な操作ボタンなど）がファーストビューに収まっていない
- * 参考情報（NG にはしない）: 11px未満の文字を含む要素数、失敗したリクエスト（外部フォント等）
+ * 参考情報（NG にはしない）: 11px未満の文字を含む要素数、失敗したリクエスト（外部フォント等）、
+ *   --must-see の要素が画面の下端から --edge px（既定48＝ボタン1つ分）以内にある（入ってはいるが、何か1つ足すと画面外に出る）
  *
  * 人に見せるスクショは --dpr 2、自分の確認用は --dpr 1（既定）。
  */
@@ -23,7 +24,7 @@ const path = require('path');
 const fs = require('fs');
 
 function args(argv) {
-  const o = { out: null, widths: [1280, 390], height: 800, full: false, dpr: 1, wait: 600, target: null, mustSee: [] };
+  const o = { out: null, widths: [1280, 390], height: 800, full: false, dpr: 1, wait: 600, target: null, mustSee: [], edge: 48 };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--out') o.out = argv[++i];
@@ -33,6 +34,7 @@ function args(argv) {
     else if (a === '--dpr') o.dpr = Number(argv[++i]);
     else if (a === '--wait') o.wait = Number(argv[++i]);
     else if (a === '--must-see') o.mustSee = argv[++i].split(',').map(s => s.trim()).filter(Boolean);
+    else if (a === '--edge') o.edge = Number(argv[++i]);
     else if (!o.target) o.target = a;
   }
   return o;
@@ -68,7 +70,7 @@ function args(argv) {
     await page.goto(url, { waitUntil: 'load', timeout: 30000 }).catch(e => errors.push('goto: ' + e.message));
     await page.waitForTimeout(o.wait);
 
-    const r = await page.evaluate((mustSee) => {
+    const r = await page.evaluate(([mustSee, edge]) => {
       const vw = window.innerWidth;
       const de = document.documentElement;
       const desc = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
@@ -96,12 +98,18 @@ function args(argv) {
         const b = el.getBoundingClientRect();
         return !(b.width > 0 && b.top >= 0 && b.left >= 0 && b.bottom <= window.innerHeight && b.right <= vw);
       });
+      // 入ってはいるが端に近い（B-013: 帯を足したら grid の行が伸び、「候補を作る」が下端まで押し出されたのに OK だった）
+      const nearEdge = mustSee.filter(sel => !hidden.includes(sel)).map(sel => {
+        const b = document.querySelector(sel).getBoundingClientRect();
+        const room = Math.round(window.innerHeight - b.bottom);   // 横幅いっぱいの要素があるので、下端だけを見る
+        return room < edge ? `${sel}（残り${room}px）` : null;
+      }).filter(Boolean);
       return {
-        scrollWidth: de.scrollWidth, vw, hidden,
+        scrollWidth: de.scrollWidth, vw, hidden, nearEdge,
         overflow: over.slice(0, 5).map(o => `${desc(o.el)} (right=${o.right}px)`),
         small, broken,
       };
-    }, o.mustSee);
+    }, [o.mustSee, o.edge]);
 
     // ファーストビュー（固定表示の要素も実際の位置で写る）
     const file = path.join(out, `${base}-${w}.png`);
@@ -137,6 +145,7 @@ function args(argv) {
     if (errors.length) console.log('  ✗ エラー:\n    ' + errors.slice(0, 8).join('\n    '));
     if (r.broken.length) console.log('  ✗ 画像の読み込み失敗: ' + r.broken.join(', '));
     if (r.hidden.length) console.log('  ✗ ファーストビューに入っていない要素: ' + r.hidden.join(', '));
+    if (r.nearEdge.length) console.log(`  ・画面の下端から${o.edge}px以内の要素: ${r.nearEdge.join(', ')}（押し出されかけていないか、スクショで確認）`);
     if (r.small) console.log(`  ・11px未満の文字を含む要素: ${r.small} 個（意図したものか確認）`);
     if (failed.length) console.log(`  ・失敗したリクエスト ${failed.length} 件（外部フォント等。表示に影響がないか確認）`);
     await ctx.close();
