@@ -80,6 +80,7 @@ jobs:
     env:
       CLIPPER_LOCAL_DIR: ${{ github.workspace }}\clipper-local
       CLIPPER_HOME: ${{ github.workspace }}\clipper-home
+      CLIPPER_VERSION: 0.3.${{ github.run_number }}   # 版の番号（B-013）。実行番号は必ず増えるので比較が単純
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -97,6 +98,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt pyinstaller
+      - name: 版を書き込む
+        run: |
+          @{ version = $env:CLIPPER_VERSION; commit = $env:GITHUB_SHA.Substring(0, 7); built = (Get-Date -AsUTC -Format "yyyy-MM-dd") } |
+            ConvertTo-Json | Out-File clipper/_version.json -Encoding utf8
+          Get-Content clipper/_version.json
       - name: アプリを作る（PyInstaller）
         run: |
           pyinstaller --noconfirm packaging/clipper.spec --distpath dist --workpath build/pyi
@@ -133,9 +139,17 @@ jobs:
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          # 更新のテスト用に、版だけを古くしたインストーラーも作る（中身は同じ）
+          $vf = "dist/clipper/_internal/clipper/_version.json"
+          $new = Get-Content $vf -Raw
+          @{ version = "0.3.0"; commit = "old"; built = "old" } | ConvertTo-Json | Out-File $vf -Encoding utf8
+          $env:CLIPPER_VERSION_SAVE = $env:CLIPPER_VERSION; $env:CLIPPER_VERSION = "0.3.0"
+          & $iscc /Fclipper-setup-old packaging\installer.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $new | Out-File $vf -Encoding utf8 -NoNewline; $env:CLIPPER_VERSION = $env:CLIPPER_VERSION_SAVE
           & $iscc packaging\installer.iss
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          Get-Item dist/clipper-setup.exe | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB)}}
+          Get-Item dist/clipper-setup.exe, dist/clipper-setup-old.exe | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB)}}
       - name: インストール → 自己テスト → アンインストール（AC9）
         run: |
           $dir = "$env:RUNNER_TEMP\cliptest"
@@ -151,6 +165,39 @@ jobs:
           Start-Sleep 3
           if (Test-Path "$dir\clipper.exe") { Write-Error "アンインストールで消えない"; exit 1 }
           Write-Host "アンインストールできた"
+      - name: 古い版からアプリ内の更新で新しい版にする（B-013・AC5）
+        run: |
+          $dir = "$env:RUNNER_TEMP\clipup"
+          $vf = "$dir\_internal\clipper\_version.json"
+          Start-Process dist/clipper-setup-old.exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$dir" -Wait
+          $before = (Get-Content $vf -Raw | ConvertFrom-Json).version
+          Write-Host "入れた版: $before"
+          if ($before -ne "0.3.0") { Write-Error "古い版が入っていない"; exit 1 }
+          # GitHub の releases API と同じ形の擬似データを、手元の HTTP サーバーで見せる
+          $exe = Get-Item dist/clipper-setup.exe
+          $sha = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          $rel = @(@{ tag_name = "clipper-v$env:CLIPPER_VERSION"; draft = $false; prerelease = $false; body = "test"; published_at = "2026-01-01T00:00:00Z";
+                      assets = @(@{ name = "clipper-setup.exe"; size = $exe.Length; digest = "sha256:$sha"; browser_download_url = "http://127.0.0.1:8781/clipper-setup.exe" }) })
+          ConvertTo-Json -InputObject $rel -Depth 6 | Out-File dist/releases.json -Encoding utf8
+          $srv = Start-Process python -ArgumentList '-m', 'http.server', '8781', '--directory', 'dist' -PassThru
+          Start-Sleep 3
+          $env:CLIPPER_UPDATE_URL = "http://127.0.0.1:8781/releases.json"
+          # -Wait は子孫のプロセス（インストーラー・起動し直したアプリ）まで待つので使わない
+          $p = Start-Process "$dir\clipper.exe" -ArgumentList '--update-now' -PassThru
+          if (-not $p.WaitForExit(300000)) { Write-Error "更新の処理が終わらない"; exit 1 }
+          Write-Host "更新の処理の終了コード: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { Get-Content "$env:CLIPPER_LOCAL_DIR\clipper.log" -Tail 30; exit 1 }
+          $v = $before
+          for ($i = 0; $i -lt 90; $i++) { Start-Sleep 2; try { $v = (Get-Content $vf -Raw | ConvertFrom-Json).version } catch {}; if ($v -eq $env:CLIPPER_VERSION) { break } }
+          Write-Host "更新後の版: $v"
+          if ($v -ne $env:CLIPPER_VERSION) { Write-Error "版が新しくならない"; exit 1 }
+          $run = $null
+          for ($i = 0; $i -lt 30; $i++) { Start-Sleep 2; $run = Get-Process clipper -ErrorAction SilentlyContinue | Where-Object { $_.Path -like "$dir*" }; if ($run) { break } }
+          if (-not $run) { Write-Error "更新の後にアプリが起動し直していない"; exit 1 }
+          Write-Host "更新の後にアプリが起動し直した（PID $($run.Id -join ', ')）"
+          $run | Stop-Process -Force
+          Get-Process msedge -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          $srv | Stop-Process -Force
       - name: インストーラーと確認結果を保存
         if: always()
         uses: actions/upload-artifact@v4
@@ -163,3 +210,38 @@ jobs:
             .dev-partner/data/works/youtube-clipper/app/st2/selftest.json
           if-no-files-found: warn
           retention-days: 30
+
+  release:
+    name: Releases に公開（main のみ・B-013 AC6）
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    env:
+      CLIPPER_VERSION: 0.3.${{ github.run_number }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: clipper-windows
+          path: rel
+      - name: Release を作る
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls -la rel/dist
+          gh release create "clipper-v$CLIPPER_VERSION" rel/dist/clipper-setup.exe \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "clipper v$CLIPPER_VERSION" \
+            --notes "YouTube切り抜きツール clipper の Windows 版（$(date -u +%Y-%m-%d)・${GITHUB_SHA::7}）。初めての方は clipper-setup.exe をダウンロードして開いてください。入れている方は、アプリのホーム画面の「更新する」から更新できます。"
+      - name: ログインなしでダウンロードできるか確認
+        run: |
+          sleep 5
+          code=$(curl -sSL -o /dev/null -w "%{http_code}" "https://github.com/$GITHUB_REPOSITORY/releases/download/clipper-v$CLIPPER_VERSION/clipper-setup.exe")
+          echo "この版: $code"; test "$code" = "200"
+          echo "最新版の固定URL: $(curl -sSL -o /dev/null -w '%{http_code}' "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/clipper-setup.exe")"

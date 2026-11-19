@@ -4,7 +4,8 @@
   /                 ホーム（動画を選ぶ → 候補を作る、最近の作業、設定）
   /review?w=<id>    レビュー（採否・伸縮・書き出し）
 API:
-  GET  /api/home                    最近の作業・設定・実行中の処理
+  GET  /api/home                    最近の作業・設定・実行中の処理・今の版
+  GET  /api/update                  新しい版があるか（10分キャッシュ）／ POST /api/update/apply で更新／ GET /api/update/state
   POST /api/pick      {kind}        Windows 標準のファイル選択画面を出し、選ばれたパスを返す
   POST /api/upload?name=…           ドラッグ＆ドロップされた動画を作業用にコピーする
   POST /api/jobs      {video,subs,credit}   候補づくりを始める
@@ -32,6 +33,7 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from . import paths
 from .pipeline import build, workdir_for
+from .updater import Updater
 from .workdir import Workdir
 
 HERE = Path(__file__).resolve().parent
@@ -79,6 +81,7 @@ class App:
         self.jobs: dict[str, dict] = {}
         self.extra: dict[str, Path] = {}
         self.wds: dict[str, Workdir] = {}
+        self.updater = Updater()         # アプリ内の更新（B-013）。テストで差し替える
         self.picker = native_pick        # テストで差し替える
         self.opener = open_folder        # テストで差し替える
         self.lock = threading.Lock()
@@ -198,8 +201,13 @@ def make_handler(app: App):
                 if u.path == "/api/home":
                     cfg = paths.load_config()
                     return self._json({"recent": app.recent(), "home": str(app.home), "log": str(paths.local_data_dir() / "clipper.log"),
+                                       "version": app.updater.version,
                                        "config": {"credit": cfg.get("credit", ""), "has_api_key": bool(cfg.get("api_key") or os.environ.get("ANTHROPIC_API_KEY"))},
                                        "jobs": [j for j in app.jobs.values() if not j["done"] and not j["error"]]})
+                if u.path == "/api/update":
+                    return self._json(app.updater.check())
+                if u.path == "/api/update/state":
+                    return self._json(app.updater.state)
                 if parts[:2] == ["api", "jobs"] and len(parts) == 3:
                     j = app.jobs.get(parts[2])
                     return self._json({k: v for k, v in j.items() if k != "trace"} if j else {"error": "unknown job"}, 200 if j else 404)
@@ -222,6 +230,9 @@ def make_handler(app: App):
             try:
                 if u.path == "/api/ping":
                     return self._json({"ok": True})
+                if u.path == "/api/update/apply":
+                    ok = app.updater.apply()
+                    return self._json({"ok": ok, "error": "" if ok else app.updater.state.get("error", "")})
                 if u.path == "/api/pick":
                     kind = self._body().get("kind", "video")
                     try:

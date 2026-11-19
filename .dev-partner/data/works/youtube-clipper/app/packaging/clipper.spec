@@ -15,8 +15,11 @@ datas = [
     (os.path.join(SAMPLES, 'talk_sample.srt'), 'samples'),
     (os.path.join(SAMPLES, 'expected.json'), 'samples'),
 ]
+VERSION_FILE = os.path.join(ROOT, 'clipper', '_version.json')   # CI が版を書き込む（B-013）。なければ版は dev
+if os.path.exists(VERSION_FILE):
+    datas.append((VERSION_FILE, 'clipper'))
 binaries = [(os.path.join(FFMPEG_DIR, 'ffmpeg.exe'), 'ffmpeg'), (os.path.join(FFMPEG_DIR, 'ffprobe.exe'), 'ffmpeg')]
-hiddenimports = ['clipper.app', 'clipper.review', 'clipper.pipeline', 'tkinter', 'tkinter.filedialog']
+hiddenimports = ['clipper.app', 'clipper.review', 'clipper.pipeline', 'clipper.updater', 'tkinter', 'tkinter.filedialog']
 for pkg in ['faster_whisper', 'ctranslate2', 'onnxruntime', 'av', 'tokenizers']:
     d, b, h = collect_all(pkg)
     datas += d; binaries += b; hiddenimports += h
