@@ -1,0 +1,32 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:linear-gradient(135deg,#7c8bb3,#b7a4c9);color:#1d1d1f}
+.dmg{position:absolute;left:36px;top:36px;width:300px;height:190px;background:rgba(255,255,255,.92);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-around;padding:20px;font-size:13px;color:#555;text-align:center}
+.dmg .app{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#f97316);display:grid;place-items:center;color:#fff;font-size:30px;margin:0 auto 6px}
+.dmg .arrow{font-size:28px;color:#888}
+.dmg .fold{width:64px;height:54px;border-radius:8px;background:#93c5fd;margin:0 auto 6px}
+.cap{position:absolute;left:36px;top:236px;width:300px;color:#fff;font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.win{position:absolute;left:370px;top:36px;right:36px;bottom:70px;background:#fbfbfd;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden;display:grid;grid-template-rows:38px 1fr}
+.tb{background:#ececf0;display:flex;align-items:center;gap:7px;padding:0 12px;font-size:13px;color:#555;border-bottom:1px solid #dcdce2}
+.tb i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.body{display:grid;grid-template-columns:210px 1fr}
+.sb{background:#f2f2f6;border-right:1px solid #e1e1e7;padding:16px 12px;font-size:13px;color:#555}
+.sb b{display:block;font-size:12px;color:#888;margin:4px 0 8px}
+.sb div{padding:7px 10px;border-radius:7px}.sb .on{background:#e1e1ea;color:#1d1d1f;font-weight:600}
+.mn{padding:34px 40px}
+.mn h1{font-size:26px;margin-bottom:6px}.mn p{color:#6e6e73;margin-bottom:22px}
+.drop{height:250px;border:2px dashed #c7c7d1;border-radius:16px;display:grid;place-items:center;text-align:center;color:#6e6e73;font-size:15px;background:#fff}
+.drop b{display:block;font-size:20px;color:#1d1d1f;margin:6px 0}
+.go{margin-top:18px;width:220px;margin-left:auto;background:#f97316;color:#fff;font-weight:800;text-align:center;border-radius:10px;padding:12px}
+.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;background:rgba(255,255,255,.4);border-radius:16px;padding:6px 10px;display:flex;gap:10px}
+.dock i{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.7);display:block}
+.dock .me{background:linear-gradient(135deg,#ef4444,#f97316)}
+</style></head><body>
+<div class="dmg"><div><div class="app">✂</div>clipper.app</div><div class="arrow">→</div><div><div class="fold"></div>アプリケーション</div></div>
+<div class="cap">配られた「clipper.dmg」を開いて、アプリをドラッグするだけ。<br>ffmpeg などはアプリの中に入っている（約500MB）。</div>
+<div class="win"><div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>&nbsp; clipper</div>
+ <div class="body"><div class="sb"><b>最近の作業</b><div class="on">＋ 新しい切り抜き</div><div>11/18 配信アーカイブ</div><div>11/11 配信アーカイブ</div></div>
+ <div class="mn"><h1>新しい切り抜き</h1><p>普通のアプリと同じように、動画をウィンドウに入れるだけ。</p>
+  <div class="drop"><div>🎬<b>動画をここにドロップ</b>mp4 / mov / mkv</div></div><div class="go">候補を作る</div></div></div></div>
+<div class="dock"><i></i><i></i><i class="me"></i><i></i></div>
+</body></html>
