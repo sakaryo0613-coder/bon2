@@ -5,12 +5,14 @@ name: clipper-windows
 on:
   push:
     branches: [main]   # 作業ブランチは PR の実行で確認する（同じ内容を2回実行しない）
-    paths:
-      - ".dev-partner/data/works/youtube-clipper/**"
+    paths:   # コードとサンプルが変わったときだけ（要件・検証メモなどの文書だけの変更では動かさない）
+      - ".dev-partner/data/works/youtube-clipper/app/**"
+      - ".dev-partner/data/works/youtube-clipper/samples/**"
       - ".github/workflows/clipper-windows.yml"
   pull_request:
-    paths:
-      - ".dev-partner/data/works/youtube-clipper/**"
+    paths:   # コードとサンプルが変わったときだけ（要件・検証メモなどの文書だけの変更では動かさない）
+      - ".dev-partner/data/works/youtube-clipper/app/**"
+      - ".dev-partner/data/works/youtube-clipper/samples/**"
       - ".github/workflows/clipper-windows.yml"
   workflow_dispatch:
 

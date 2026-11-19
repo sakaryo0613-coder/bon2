@@ -151,3 +151,14 @@ def test_home_ui_flow(env, sample_video):
     assert res["reachedReview"] and res["nClips"] == 5 and res["guideShown"]
     assert any("talk_sample" in t for t in res["recent"])
     shutil.copy(env / "home.png", SAMPLES / ".gen" / "home_after.png")
+
+
+def test_cli_app_selftest_entry(env, tmp_path):
+    """CLI の入口（python -m clipper app ...）が引数をそのままアプリに渡せる（B-008 で argparse の癖により壊れていた）。"""
+    import sys
+    out = tmp_path / "st"
+    r = subprocess.run([sys.executable, "-m", "clipper", "app", "--selftest", str(out)], cwd=str(HERE.parent),
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    res = json.loads((out / "selftest.json").read_text(encoding="utf-8"))
+    assert res["ok"] and res["checks"]["format"]["ok"]
