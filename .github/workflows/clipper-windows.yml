@@ -125,6 +125,17 @@ jobs:
           $p = Start-Process dist/clipper/clipper.exe -ArgumentList $a -Wait -PassThru
           Get-Content st1/selftest.json -Encoding utf8
           if ($p.ExitCode -ne 0) { Get-Content "$env:CLIPPER_LOCAL_DIR\clipper.log" -ErrorAction SilentlyContinue; exit 1 }
+      - name: 作ったアプリで本物の Twitch から取れるか（B-012・AC9）
+        run: |
+          # 公開のアーカイブを1つ探し、情報・チャット（冒頭10分）・動画（冒頭20秒）を同梱の yt-dlp で取る。通信の揺らぎに備えて1回だけやり直す
+          for ($k = 1; $k -le 2; $k++) {
+            $p = Start-Process dist/clipper/clipper.exe -ArgumentList '--twitch-probe', "$PWD\tw1" -PassThru
+            if (-not $p.WaitForExit(300000)) { $p.Kill(); Write-Host "時間切れ" }
+            Get-Content tw1/twitch_probe.json -Encoding utf8 -ErrorAction SilentlyContinue
+            if ($p.ExitCode -eq 0) { break }
+            if ($k -eq 2) { exit 1 }
+            Start-Sleep 20
+          }
       - name: 作ったアプリのサーバーと自動終了（AC6）
         run: |
           $p = Start-Process dist/clipper/clipper.exe -ArgumentList '--no-window', '--port', '8799', '--idle', '8' -PassThru
@@ -208,6 +219,7 @@ jobs:
             .dev-partner/data/works/youtube-clipper/app/st1/selftest.json
             .dev-partner/data/works/youtube-clipper/app/st1/selftest_frame.png
             .dev-partner/data/works/youtube-clipper/app/st2/selftest.json
+            .dev-partner/data/works/youtube-clipper/app/tw1/twitch_probe.json
           if-no-files-found: warn
           retention-days: 30
 

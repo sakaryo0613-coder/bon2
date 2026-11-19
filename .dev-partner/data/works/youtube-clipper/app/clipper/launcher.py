@@ -5,6 +5,7 @@ r"""アプリの入口（clipper.exe）。
               [--speech <wav>]     加えて、その音声を文字起こしできるか確認（英語・tiny モデル）
   clipper.exe --no-window         窓を開かずにサーバーだけ起動（確認用）
   clipper.exe --update-now        新しい版があれば、すぐに更新する（確認用。結果は %LOCALAPPDATA%\clipper\clipper.log）
+  clipper.exe --twitch-probe <dir> [--twitch-url URL]   同梱の yt-dlp で、Twitch のアーカイブの情報・チャット・動画の冒頭を取れるか確認（CI 用）
 """
 from __future__ import annotations
 
@@ -171,12 +172,18 @@ def main(argv=None) -> int:
     ap.add_argument("--port", type=int, default=0)
     ap.add_argument("--idle", type=float, default=IDLE_TIMEOUT)
     ap.add_argument("--update-now", action="store_true")
+    ap.add_argument("--twitch-probe", metavar="DIR")
+    ap.add_argument("--twitch-url")
     a = ap.parse_args(argv)
     paths.setup_env()
     log = log_setup()
 
     if a.selftest:
         return selftest(Path(a.selftest), Path(a.speech) if a.speech else None)
+
+    if a.twitch_probe:
+        from .twitch import probe
+        return 0 if probe(Path(a.twitch_probe), a.twitch_url)["ok"] else 1
 
     if a.update_now:
         from .updater import Updater

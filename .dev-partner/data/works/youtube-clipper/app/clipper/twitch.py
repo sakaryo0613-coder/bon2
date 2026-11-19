@@ -69,12 +69,32 @@ def explain_error(e: BaseException) -> str:
 MAX_HEIGHT = 720
 
 
+class _YtLog:
+    """yt-dlp の出力をログファイルに回す（アプリ版は標準出力がないため）。"""
+    def __init__(self):
+        import logging
+        self.log = logging.getLogger("clipper.yt_dlp")
+
+    def debug(self, msg):
+        if not msg.startswith("[debug]"):
+            self.log.debug(msg)
+
+    def info(self, msg):
+        self.log.info(msg)
+
+    def warning(self, msg):
+        self.log.warning(msg)
+
+    def error(self, msg):
+        self.log.error(msg)
+
+
 def _ydl(opts: dict):
     try:
         import yt_dlp
     except ImportError:
         raise TwitchError("URL から取り込むには yt-dlp が必要です（pip install yt-dlp）")
-    base = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True}
+    base = {"quiet": True, "no_warnings": True, "noprogress": True, "noplaylist": True, "logger": _YtLog()}
     return yt_dlp.YoutubeDL({**base, **opts})
 
 
@@ -261,22 +281,50 @@ LAUGH = re.compile(r"草|[wｗ]{3,}|笑|ワロ|LUL|KEKW|OMEGALUL|lol|LOL|[8８]{
 
 class ChatSignal:
     def __init__(self, messages: list[dict], duration: float):
-        self.times = sorted(float(m["t"]) for m in messages)
-        self.texts = [m["text"] for m in sorted(messages, key=lambda m: m["t"])]
+        ms = sorted(messages, key=lambda m: float(m["t"]))
+        self.times = [float(m["t"]) for m in ms]
+        self.texts = [m.get("text", "") for m in ms]
         self.duration = max(duration, self.times[-1] if self.times else 0.0, BIN)
         nb = int(self.duration // BIN) + 1
         self.bins = [0] * nb
         for t in self.times:
             self.bins[min(nb - 1, int(t // BIN))] += 1
+        k = int(BASE_HALF // BIN)
+        self.base = [max(MIN_RATE, statistics.median(self.bins[max(0, i - k): i + k + 1]) / BIN) for i in range(nb)]
 
     def __len__(self):
         return len(self.times)
 
-    def base_rate(self, center: float) -> float:
-        k = int(BASE_HALF // BIN)
-        i = int(center // BIN)
-        window = self.bins[max(0, i - k): i + k + 1]
-        return max(MIN_RATE, statistics.median(window) / BIN if window else 0.0)
+    def base_rate(self, t: float) -> float:
+        return self.base[max(0, min(len(self.base) - 1, int(t // BIN)))]
+
+    def _excess(self, i: int) -> float:
+        return max(0.0, self.bins[i] - self.base[i] * BIN)
+
+    def _hot(self, i: int) -> bool:
+        return self.bins[i] >= max(2.0, self.base[i] * BIN * HOT)
+
+    def capture(self, a: float, b: float) -> float:
+        """チャット側の時刻 [a, b] が、重なっている盛り上がり（平常の1.5倍以上が続く範囲）をどれだけ含むか（0〜1）。
+        山の一部にかかるだけの区間（前の話題をくっつけた区間など）に、山全体を含む区間と同じ点を与えないため。"""
+        nb = len(self.bins)
+        ia, ib = max(0, int(a // BIN)), min(nb - 1, int(b // BIN))
+        hot = [i for i in range(ia, ib + 1) if self._hot(i)]
+        if not hot:
+            return 0.0
+        lo, hi = hot[0], hot[-1]
+        while lo > 0 and self._hot(lo - 1):
+            lo -= 1
+        while hi + 1 < nb and self._hot(hi + 1):
+            hi += 1
+        total = sum(self._excess(i) for i in range(lo, hi + 1))
+        if total <= 0:
+            return 0.0
+        inside = 0.0
+        for i in range(max(lo, ia), min(hi, ib) + 1):
+            frac = (min(b, (i + 1) * BIN) - max(a, i * BIN)) / BIN
+            inside += self._excess(i) * max(0.0, min(1.0, frac))
+        return round(min(1.0, inside / total), 2)
 
     def measure(self, start: float, end: float) -> dict:
         """映像の区間 [start, end] に対するチャットの反応。"""
@@ -286,18 +334,23 @@ class ChatSignal:
         expected = self.base_rate((a + b) / 2) * (b - a)
         laughs = sum(1 for t in self.texts[i:j] if LAUGH.search(t))
         return {"ratio": round(count / expected, 2) if expected else 0.0, "count": count,
-                "laugh": round(laughs / count, 2) if count else 0.0}
+                "laugh": round(laughs / count, 2) if count else 0.0, "capture": self.capture(a, b)}
 
     def bonus(self, start: float, end: float) -> tuple[int, list[str], dict]:
-        """ルール採点への加点。×2で+10、×3.5以上で上限+25（言葉の「笑い」の加点と同じ程度）。"""
+        """ルール採点への加点（最大+25、笑いで+5）。言葉の「笑い」の加点（最大+24）と同じ程度にする。
+        強さ: ×1.5で0.2、×3.5以上で1.0。山をどれだけ含むか（capture）を掛ける。"""
         m = self.measure(start, end)
         pts, why = 0, []
         if m["count"] >= MIN_COUNT and m["ratio"] >= HOT:
-            pts += min(25, round(10 * (m["ratio"] - 1)))
-            why.append(f"チャット ×{m['ratio']:.1f}")
-            if m["laugh"] >= 0.3:
-                pts += 5
-                why.append("チャットで笑い")
+            strength = min(1.0, (m["ratio"] - 1) / 2.5)
+            pts = round(25 * strength * m["capture"])
+            if pts >= 3:
+                why.append(f"チャット ×{m['ratio']:.1f}")
+                if m["laugh"] >= 0.3:
+                    pts += round(5 * m["capture"])
+                    why.append("チャットで笑い")
+            else:
+                pts = 0
         return pts, why, m
 
     def series(self, step: float = 60.0) -> list[dict]:
