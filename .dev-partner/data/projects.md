@@ -7,7 +7,7 @@
 |---|---|---|---|---|
 | P-000 | dev-partner（モノを作り続ける仕組み） | 環境 | 稼働中 | `bon2/.dev-partner/`（`~/.claude/skills/dev-partner`、`~/.claude/dev-partner` からリンク） |
 | P-001 | 浅草シーシャbon 公式サイト | Webサイト | 公開中（既存・取り込み） | `bon2/index.html`（GitHub Pages） |
-| P-002 | clipper（YouTube切り抜きツール） | Windows アプリ（インストーラー配布）＋ Python | Windows アプリ化済み・実機確認待ち | `~/.claude/dev-partner/works/youtube-clipper/app/` |
+| P-002 | clipper（YouTube切り抜きツール） | Windows アプリ（インストーラー配布・アプリ内で更新）＋ Python | 実機で動作確認済み・アプリ内の更新に対応 | `~/.claude/dev-partner/works/youtube-clipper/app/` |
 
 ---
 
@@ -43,10 +43,12 @@
   - 縦型 1080×1920 で書き出し（タイトル帯・字幕・出典・−14 LUFS）、説明文の下書き CSV
   - （B-008）Windows アプリ: インストーラー（clipper-setup.exe・管理者権限なし）、ホーム画面（動画を選ぶ → 候補を作る → 進み具合 → レビューへ自動で移る・最近の作業・設定）、初回ガイド（4ステップ）、書き出したフォルダを開く、窓を閉じると自動終了、二重起動しない、`--selftest`
   - （B-008）同梱物: ffmpeg（GPL ビルド）、日本語フォント（BIZ UDPゴシック・OFL）
+  - （B-013）アプリ内の更新: ホームに今の版を表示。新しい版があると帯で知らせ、「更新する」でダウンロード → 照合（大きさ・sha256）→ 静かに上書き → 自動で開き直す。ブラウザを通さないので「危険」の警告が出ない
 - 保存場所: `~/.claude/dev-partner/works/youtube-clipper/`（実体は `bon2/.dev-partner/data/works/youtube-clipper/`）。コードは `app/`、レイアウト調整は `tune/tune.html`
 - 合格基準の要約:
   - B-001: AC1〜AC10 を自動テストで確認
   - B-008: AC1〜AC10 をローカル33件と Windows CI（GitHub Actions）で確認。英語音声の文字起こしと、インストール・アンインストールを含む
-  - 未検証で B-004 に回したもの: 日本語の文字起こしの精度、yt-dlp、Claude の実際の採点、実機の見た目
-- 配布物: GitHub Actions `clipper-windows` の成果物 `clipper-windows`（clipper-setup.exe、約170MB、GitHub へのログインが必要）
-- 作成: 2026-11-19（B-001・案D 第1段階）。2026-11-19 B-008 で Windows アプリ化
+  - B-013: AC1〜AC6 をローカル43件と Windows CI で確認。古い版（0.3.0）からアプリ内の更新で新しい版に上書きし、自動で起動し直すことまで確認
+  - 未検証で B-004 に回したもの: 日本語の文字起こしの精度、yt-dlp、Claude の実際の採点、実機の見た目（実機での起動・インストールは 2026-11-19 にユーザーが確認済み）
+- 配布物: GitHub Releases の最新版 https://github.com/sakaryo0613-coder/bon2/releases/latest/download/clipper-setup.exe（約170MB、ログイン不要）。main に反映するたびに CI が `clipper-v0.3.<実行番号>` を公開する。入れているアプリは「更新する」で更新できる
+- 作成: 2026-11-19（B-001・案D 第1段階）。2026-11-19 B-008 で Windows アプリ化。2026-11-19 B-013 でアプリ内の更新に対応
