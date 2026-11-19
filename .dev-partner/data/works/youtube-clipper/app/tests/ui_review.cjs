@@ -10,12 +10,17 @@ const { chromium } = require('playwright');
   page.on('pageerror', e => errors.push(e.message));
   let alerts = 0;
   page.on('dialog', d => { alerts++; d.accept(); });
-  const state = () => page.evaluate(async () => (await (await fetch('/api/state')).json()).clips);
+  const state = () => page.evaluate(async () => (await (await fetch(API + '/state')).json()).clips);
   const byId = async id => (await state()).find(c => c.id === id);
   const settle = () => page.waitForTimeout(250);
 
   await page.goto(url);
   await page.waitForSelector('.c');
+  // 初回ガイドが出ていることを確認して閉じる（4ステップを最後まで進める）
+  await page.waitForSelector('#guide:not([hidden]) .gbox');
+  const guideSteps = [];
+  for (let i = 0; i < 4; i++) { guideSteps.push(await page.textContent('#g-title')); await page.click('#g-next'); }
+  const guideClosed = await page.$eval('#guide', e => e.hidden);
   const first = await byId('c01');
   const sel = () => page.$eval('.c.sel', e => e.dataset.id);
 
@@ -50,16 +55,24 @@ const { chromium } = require('playwright');
     minDur = Math.min(minDur, (await byId('c03')).duration);
   }
 
+  // 5.5) 再読み込みしてもガイドは出ない。「？ 使い方」で再表示できる
+  await page.reload(); await page.waitForSelector('.c'); await settle();
+  const guideAfterReload = await page.$eval('#guide', e => e.hidden);
+  await page.click('#help'); const guideReopened = await page.$eval('#guide', e => !e.hidden);
+  await page.click('#g-skip');
+
   // 6) 書き出し
   await page.click('#go');
   await page.waitForFunction(() => /完了|エラー/.test(document.getElementById('ptext').textContent), null, { timeout: 300000 });
   const ptext = await page.textContent('#ptext');
+  const openVisible = await page.$eval('#openf', e => !e.hidden);
+  await page.click('#openf'); await settle();
   if (shot) await page.screenshot({ path: shot });
   const clips = await state();
   console.log(JSON.stringify({
     firstSelected: first.id, afterAccept: afterA,
     c03: { before: [before3.start_sid, before3.end_sid, before3.duration], after: [after3.start_sid, after3.end_sid, after3.duration] },
-    minDurAfterShrink: minDur, alerts, ptext, errors,
+    minDurAfterShrink: minDur, alerts, ptext, errors, guideSteps, guideClosed, guideAfterReload, guideReopened, openVisible,
     statuses: Object.fromEntries(clips.map(c => [c.id, c.status])),
     titles: Object.fromEntries(clips.map(c => [c.id, c.title])),
   }));

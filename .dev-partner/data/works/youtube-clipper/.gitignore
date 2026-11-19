@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 *.clipper/
 shots/*-p*.png
+app/build/
+app/dist/
+app/st1/
+app/st2/

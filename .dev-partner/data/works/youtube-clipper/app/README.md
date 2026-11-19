@@ -1,11 +1,42 @@
-# clipper — YouTube切り抜きツール（第1段階）
+# clipper — YouTube切り抜きツール
 
 長い動画から、ショート動画にできる区間の候補をAIが選びます。人はレビュー画面で採用・却下と前後の調整だけを行い、
 採用したものを **縦型 1080×1920・字幕つき** でまとめて書き出します。
 
 > 使えるのは、**自分の動画**と、**切り抜きを許諾された動画**だけです。各チャンネルの切り抜きガイドラインに従い、出典を表記してください。
 
-## 準備（Mac / Windows、最初の1回だけ）
+## Windows アプリとして使う（おすすめ・コマンド入力なし）
+### インストール（最初の1回だけ）
+1. `clipper-setup.exe` を開く
+   - 入手方法: GitHub の Actions → `clipper-windows` → 最新の実行 → Artifacts の `clipper-windows`（GitHub へのログインが必要）
+2. 初回に「Windows によって PC が保護されました」と出たら、「詳細情報」→「実行」を押す
+   - 署名のないアプリのため出る警告です。販売する場合は証明書が必要です
+3. 「次へ」を押していけば完了です。スタートメニューとデスクトップに「clipper」ができます
+
+### 使い方
+1. デスクトップの「clipper」を開く
+2. 「動画を選ぶ」で動画を選ぶ
+   - YouTube Studio からダウンロードした mp4 など
+   - 字幕ファイル（.srt）もあれば選ぶと、早く終わります
+3. 「候補を作る」を押す
+   - 60分の動画で約20分かかります（初回だけ、文字起こしの部品のダウンロードで数分追加）
+   - 終わると自動でレビュー画面に進みます
+4. レビュー画面は初回にガイドが出ます。採用・却下を決めて「採用した N 本を書き出す」→「書き出したフォルダを開く」
+   - ガイドは右上の「？ 使い方」でいつでも見られます
+
+| 何 | 場所 |
+|---|---|
+| 作業と書き出した動画 | `ドキュメント\clipper\<動画名>.clipper\out\` |
+| 設定（APIキー・出典の既定値） | 右上の「⚙ 設定」（保存先: `%APPDATA%\clipper\config.json`） |
+| 文字起こしの部品・ログ | `%LOCALAPPDATA%\clipper\` |
+
+- 窓を閉じると、1分ほどでアプリも終了します。処理中は終了しません
+- Claude の APIキーは任意です。入れると候補の選び方とタイトルが賢くなります（60分の動画で数十円）
+
+---
+
+## 開発者向け: Python から使う（Mac / Windows / Linux）
+### 準備（最初の1回だけ）
 1. Python 3.10 以上と ffmpeg を入れる
    - Mac:
 
@@ -39,8 +70,11 @@
 
    費用の目安は、60分の動画1本で数十円です。
 
-## 使い方
+### 使い方
 ```bash
+# アプリとして起動（ホーム画面がブラウザで開く）
+python -m clipper app
+
 # 動画ファイルから（文字起こしは自動。60分の動画で20〜30分ほど）
 python -m clipper run 配信アーカイブ.mp4 --credit "出典: ○○チャンネル"
 
@@ -52,7 +86,7 @@ python -m clipper run "https://www.youtube.com/watch?v=XXXX"
 ```
 終わるとブラウザでレビュー画面が開きます（`http://127.0.0.1:8765`）。
 
-### YouTube に上がっている動画を使うとき
+## YouTube に上がっている動画を使うとき
 - **自分のチャンネルの動画**: YouTube Studio から元の動画と字幕を取り出して渡すのが確実です。
   1. 動画: YouTube Studio →「コンテンツ」→ 動画の「︙」→「ダウンロード」
   2. 字幕: YouTube Studio →「字幕」→ 動画を選ぶ → 言語の「︙」→「ダウンロード」→ .srt（自動字幕でも可）
@@ -113,8 +147,18 @@ python -m clipper review <作業フォルダ>
 
    確認: 候補の採点が `llm` になり、タイトルが自然か。
 
-## テスト
+## テストとアプリの作成
 ```bash
 pip install pytest
-python -m pytest -q tests        # レビュー画面のテストには node と playwright が必要
+python -m pytest -q tests        # 画面のテストには node と playwright が必要
+python -m clipper app --selftest out   # 同梱物だけで候補づくり→書き出しが通るか
 ```
+
+Windows 用のアプリ（`clipper.exe`）とインストーラー（`clipper-setup.exe`）は、GitHub Actions（`.github/workflows/clipper-windows.yml`）で作って確認します。手元で作る場合は Windows で次を実行します。
+
+```bash
+pip install pyinstaller
+pyinstaller --noconfirm packaging/clipper.spec
+```
+
+`build/ffmpeg/` に ffmpeg.exe と ffprobe.exe を置いてから実行してください。インストーラーは Inno Setup で `iscc packaging\installer.iss` を実行して作ります。

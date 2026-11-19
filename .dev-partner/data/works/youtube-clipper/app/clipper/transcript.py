@@ -56,18 +56,45 @@ def load_subs(path: Path) -> list[dict]:
     return parse_vtt(text) if path.suffix.lower() == ".vtt" or text.startswith("WEBVTT") else parse_srt(text)
 
 
-def transcribe_whisper(video: Path, model: str = "small") -> list[dict]:
-    """faster-whisper で文字起こし（語ごとの時刻つき）。初回はモデルをダウンロードする。"""
+def load_audio_16k(path: Path):
+    """ffmpeg で音声を 16kHz・モノラル・float32 の配列にする（Whisper の入力形式）。"""
+    import subprocess
+
+    import numpy as np
+    r = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", str(path), "-vn", "-ac", "1", "-ar", "16000",
+                        "-f", "f32le", "-"], capture_output=True)
+    if r.returncode != 0:
+        raise RuntimeError("音声を読み込めませんでした: " + r.stderr.decode("utf-8", "replace")[-500:])
+    return np.frombuffer(r.stdout, np.float32)
+
+
+def transcribe_whisper(video: Path, model: str = "small", progress=None, download_root: Path | None = None,
+                       language: str = "ja", duration: float | None = None) -> list[dict]:
+    """faster-whisper で文字起こし（語ごとの時刻つき）。初回はモデルをダウンロードする。
+
+    progress(pct, message): pct が -1 のときはモデルの取得中（初回のみ）、0〜100 は文字起こしの進み具合。
+    """
     try:
         from faster_whisper import WhisperModel
     except ImportError as e:  # pragma: no cover
-        raise SystemExit("faster-whisper が必要です: pip install faster-whisper") from e
-    wm = WhisperModel(model, device="cpu", compute_type="int8")
-    segments, _info = wm.transcribe(str(video), language="ja", vad_filter=True, word_timestamps=True)
+        raise RuntimeError("faster-whisper が必要です: pip install faster-whisper") from e
+    progress = progress or (lambda pct, msg: None)
+    if download_root is None:
+        from .paths import models_dir
+        download_root = models_dir()
+    Path(download_root).mkdir(parents=True, exist_ok=True)
+    progress(-1, f"文字起こしの準備をしています（初回のみ、モデル {model} をダウンロード。数分かかります）")
+    wm = WhisperModel(model, device="cpu", compute_type="int8", download_root=str(download_root))
+    audio = load_audio_16k(video)   # faster-whisper 内蔵の読み込み（PyAV）は版の組み合わせで壊れるため、同梱の ffmpeg で読む
+    segments, info = wm.transcribe(audio, language=language, vad_filter=True, word_timestamps=True)
+    total = duration or getattr(info, "duration", None) or 0
     out = []
     for s in segments:
         words = [{"start": w.start, "end": w.end, "text": w.word} for w in (s.words or [])]
         out.append({"start": s.start, "end": s.end, "text": s.text.strip(), "words": words})
+        if total:
+            pct = min(99.0, 100 * s.end / total)
+            progress(pct, f"文字起こし中 {int(s.end // 60)}分{int(s.end % 60):02d}秒 / {int(total // 60)}分")
     return out
 
 

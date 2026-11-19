@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>clipper</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--sub:#6b7280;--line:#e5e7eb;--accent:#0067c0;--accent-bg:#e8f1fb;--ok:#16a34a;--ng:#dc2626;--ng-bg:#fee2e2;--side:#eef0f3}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--sub:#9ca3af;--line:#2a2f38;--accent:#4ea1ff;--accent-bg:#13263d;--ok:#22c55e;--ng:#f87171;--ng-bg:#3a1515;--side:#14171c}}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI","Yu Gothic UI",Meiryo,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:grid;grid-template-rows:auto 1fr}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px}
+button:disabled{opacity:.45;cursor:not-allowed}
+header{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:17px;display:flex;align-items:center;gap:8px}
+.logo{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;display:grid;place-items:center;font-size:15px}
+header .sp{flex:1}
+.wrap{display:grid;grid-template-columns:250px 1fr;min-height:0}
+aside{background:var(--side);border-right:1px solid var(--line);padding:16px 12px;overflow:auto}
+aside h2{font-size:12px;color:var(--sub);font-weight:600;margin:4px 6px 8px;letter-spacing:.04em}
+.item{display:block;width:100%;text-align:left;border:0;background:none;border-radius:8px;padding:8px 10px;margin-bottom:2px;color:var(--ink)}
+.item:hover{background:var(--accent-bg)}
+.item.on{background:var(--accent-bg);color:var(--accent);font-weight:700}
+.item small{display:block;color:var(--sub);font-weight:400;font-size:12px}
+.empty{color:var(--sub);font-size:13px;padding:6px 10px}
+main{padding:26px 36px;overflow:auto}
+.box{max-width:860px}
+main h1{font-size:24px}
+.lead{color:var(--sub);margin:2px 0 16px}
+.steps{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.steps span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--sub)}
+.steps span.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+#pick{display:block;width:100%;height:170px;border:2px dashed #9fb5cf;border-radius:14px;background:var(--card);text-align:center;color:var(--sub)}
+#pick:hover,#pick.drag{border-color:var(--accent);background:var(--accent-bg)}
+#pick b{display:block;font-size:20px;color:var(--ink);margin:4px 0}
+#pick .ic{font-size:30px}
+#pick.has{border-style:solid;border-color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.field{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.field label{display:block;font-size:12px;color:var(--sub)}
+.field .in{display:flex;gap:8px;align-items:center}
+.field .val{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.field input{flex:1;min-width:0;border:0;background:none;font:inherit;color:var(--ink);padding:2px 0;outline:none}
+.field button{padding:3px 10px;font-size:13px}
+#start{display:block;margin:16px 0 0 auto;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;font-size:17px;padding:12px 34px}
+.job{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.job[hidden]{display:none}
+.job h2{font-size:16px;margin-bottom:8px}
+.stg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.stg span{font-size:12.5px;border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--sub);text-align:center}
+.stg span.now{background:var(--accent-bg);color:var(--accent);font-weight:700}
+.stg span.ok{color:var(--ok)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+.bar.ind i{width:30%;animation:ind 1.4s infinite ease-in-out}
+@keyframes ind{0%{margin-left:-30%}100%{margin-left:100%}}
+.msg{font-size:14px;margin-top:8px}
+.note{font-size:12.5px;color:var(--sub);margin-top:4px}
+.err{margin-top:12px;background:var(--ng-bg);color:var(--ng);border-radius:10px;padding:10px 14px;font-size:14px;overflow-wrap:anywhere}
+.err[hidden]{display:none}
+dialog{border:0;border-radius:14px;padding:22px 24px;max-width:480px;width:calc(100% - 32px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{font-size:18px;margin-bottom:8px}
+dialog p{font-size:13.5px;color:var(--sub);margin-bottom:10px}
+dialog input{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+dialog .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+dialog .btns .p{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+@media (max-width:760px){.wrap{grid-template-columns:1fr}aside{display:none}main{padding:18px 16px}.row{grid-template-columns:1fr}.stg{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="logo">✂</span>clipper</h1><span class="sp"></span>
+  <button id="settings" title="設定">⚙ 設定</button>
+</header>
+<div class="wrap">
+  <aside>
+    <h2>最近の作業</h2>
+    <button class="item on">＋ 新しい切り抜き</button>
+    <div id="recent"></div>
+  </aside>
+  <main><div class="box">
+    <h1>新しい切り抜き</h1>
+    <p class="lead">動画を選んで「候補を作る」を押すだけ。終わると自動でレビュー画面に進みます。</p>
+    <div class="steps"><span class="on" id="s1">① 動画を選ぶ</span><span id="s2">② 候補を作る（60分の動画で約20分）</span><span id="s3">③ レビューして書き出す</span></div>
+    <button id="pick"><span class="ic">🎬</span><b id="pick-title">動画を選ぶ</b><span id="pick-sub">クリックして選ぶ（またはここに動画をドラッグ）</span></button>
+    <div class="row">
+      <div class="field"><label>字幕ファイル（任意・あると速く終わる）</label>
+        <div class="in"><span class="val" id="subs-val">なし（自動で文字起こし）</span><button id="pick-subs">選ぶ</button><button id="clear-subs" hidden>外す</button></div></div>
+      <div class="field"><label for="credit">出典表記（動画の右下に入ります）</label>
+        <div class="in"><input id="credit" placeholder="出典: ○○チャンネル"></div></div>
+    </div>
+    <button id="start" disabled>候補を作る</button>
+    <section class="job" id="job" hidden aria-live="polite">
+      <h2 id="job-title">候補を作っています</h2>
+      <div class="stg"><span data-s="prepare">準備</span><span data-s="model">文字起こしの準備</span><span data-s="transcribe">文字起こし</span><span data-s="candidates">候補づくり</span></div>
+      <div class="bar" id="bar"><i id="bar-i"></i></div>
+      <p class="msg" id="job-msg"></p>
+      <p class="note" id="job-note">この画面は閉じずにお待ちください。終わると自動でレビュー画面に進みます。</p>
+    </section>
+    <div class="err" id="err" hidden></div>
+  </div></main>
+</div>
+<dialog id="dlg">
+  <h2>設定</h2>
+  <p>Claude の APIキーを入れると、候補の選び方とタイトルが賢くなります（費用は60分の動画で数十円ほど）。<br>入れなくても使えます（その場合はルールで選びます）。</p>
+  <input id="key" type="password" placeholder="sk-ant-…（未設定）" autocomplete="off">
+  <div class="btns"><button id="dlg-close">閉じる</button><button class="p" id="dlg-save">保存</button></div>
+</dialog>
+<script>
+const $ = id => document.getElementById(id);
+const S = {video: '', subs: '', job: null, t0: 0};
+const ORDER = ['prepare', 'model', 'transcribe', 'candidates', 'done'];
+const fmt = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}分${String(s % 60).padStart(2, '0')}秒`; };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const post = (url, body) => fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})}).then(r => r.json());
+const base = p => p.split(/[\\/]/).pop();
+
+async function load() {
+  const h = await (await fetch('/api/home')).json();
+  if (!$('credit').value) $('credit').value = h.config.credit || '';
+  $('key').placeholder = h.config.has_api_key ? '設定済み（変更するときだけ入力）' : 'sk-ant-…（未設定）';
+  $('recent').innerHTML = h.recent.length ? h.recent.map(r => `<button class="item" data-w="${esc(r.id)}">${esc(r.title)}
+      <small>候補${r.n}・採用${r.accepted}・未判断${r.pending}${r.outputs ? '・書き出し' + r.outputs : ''}</small></button>`).join('')
+    : '<p class="empty">まだありません</p>';
+  document.querySelectorAll('#recent .item').forEach(b => b.onclick = () => location.href = '/review?w=' + encodeURIComponent(b.dataset.w));
+  if (h.jobs.length && !S.job) watch(h.jobs[0]);
+}
+
+function setVideo(p) {
+  S.video = p; $('pick').classList.toggle('has', !!p);
+  $('pick-title').textContent = p ? base(p) : '動画を選ぶ';
+  $('pick-sub').textContent = p ? 'クリックで選び直す' : 'クリックして選ぶ（またはここに動画をドラッグ）';
+  $('start').disabled = !p; $('s1').classList.toggle('on', !p); $('s2').classList.toggle('on', !!p);
+}
+function setSubs(p) {
+  S.subs = p; $('subs-val').textContent = p ? base(p) : 'なし（自動で文字起こし）'; $('clear-subs').hidden = !p;
+}
+$('pick').onclick = async () => { const r = await post('/api/pick', {kind: 'video'}); if (r.error) showErr(r.error); else if (r.path) { $('err').hidden = true; setVideo(r.path); } };
+$('pick-subs').onclick = async () => { const r = await post('/api/pick', {kind: 'subs'}); if (r.error) showErr(r.error); else if (r.path) setSubs(r.path); };
+$('clear-subs').onclick = () => setSubs('');
+
+// ドラッグ＆ドロップ（ブラウザからは元の場所が分からないため、作業用にコピーする）
+['dragenter', 'dragover'].forEach(ev => $('pick').addEventListener(ev, e => { e.preventDefault(); $('pick').classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => $('pick').addEventListener(ev, e => { e.preventDefault(); $('pick').classList.remove('drag'); }));
+$('pick').addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const x = new XMLHttpRequest(); x.open('POST', '/api/upload?name=' + encodeURIComponent(f.name));
+  x.upload.onprogress = ev => { $('pick-title').textContent = `取り込み中 ${Math.round(100 * ev.loaded / ev.total)}%`; };
+  x.onload = () => { const r = JSON.parse(x.responseText); if (r.path) setVideo(r.path); };
+  x.send(f);
+});
+
+$('start').onclick = async () => {
+  $('err').hidden = true; $('start').disabled = true;
+  const r = await post('/api/jobs', {video: S.video, subs: S.subs, credit: $('credit').value.trim()});
+  if (r.error) { showErr(r.error); $('start').disabled = false; return; }
+  watch(r);
+};
+
+function watch(job) {
+  S.job = job; S.t0 = job.started ? job.started * 1000 : Date.now();
+  $('job').hidden = false; $('start').hidden = true; $('pick').disabled = true;
+  $('job-title').textContent = `「${job.video || ''}」の候補を作っています`;
+  tick();
+}
+async function tick() {
+  const j = await (await fetch('/api/jobs/' + S.job.id)).json();
+  if (j.error) { showErr('うまくいきませんでした: ' + j.error); $('start').hidden = false; $('start').disabled = false; $('pick').disabled = false; return; }
+  const i = ORDER.indexOf(j.stage);
+  document.querySelectorAll('.stg span').forEach(s => {
+    const k = ORDER.indexOf(s.dataset.s); s.className = k < i ? 'ok' : (k === i ? 'now' : '');
+    if (k < i) s.textContent = s.textContent.replace(/^✓ /, '') .replace(/^/, '✓ ');
+  });
+  const ind = j.stage === 'model' || j.stage === 'prepare' || (j.stage === 'candidates' && j.pct < 100);
+  $('bar').classList.toggle('ind', ind); $('bar-i').style.width = ind ? '' : (j.stage === 'done' ? 100 : j.pct) + '%';
+  $('job-msg').textContent = `${j.message}（経過 ${fmt((Date.now() - S.t0) / 1000)}）`;
+  if (j.done) { $('job-msg').textContent = j.message + '。レビュー画面に進みます…'; setTimeout(() => location.href = '/review?w=' + encodeURIComponent(j.workdir), 800); return; }
+  setTimeout(tick, 1000);
+}
+function showErr(m) { $('err').textContent = m; $('err').hidden = false; }
+
+$('settings').onclick = () => $('dlg').showModal();
+$('dlg-close').onclick = () => $('dlg').close();
+$('dlg-save').onclick = async () => { const k = $('key').value.trim(); if (k) await post('/api/config', {api_key: k}); $('key').value = ''; $('dlg').close(); load(); };
+
+setInterval(() => fetch('/api/ping', {method: 'POST'}).catch(() => {}), 10000);
+load();
+</script>
+</body>
+</html>

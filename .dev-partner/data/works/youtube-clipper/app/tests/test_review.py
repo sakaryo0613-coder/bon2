@@ -18,15 +18,18 @@ HERE = Path(__file__).resolve().parent
 
 @pytest.mark.skipif(not shutil.which("node"), reason="node がない")
 def test_review_flow(sample_video, tmp_path, monkeypatch):
+    monkeypatch.setenv("CLIPPER_LOCAL_DIR", str(tmp_path / "local"))
     for k in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
         monkeypatch.delenv(k, raising=False)
     wd = tmp_path / "demo.clipper"
     main(["run", str(sample_video), "--subs", str(SAMPLES / "talk_sample.srt"), "--workdir", str(wd),
           "--scorer", "rule", "--credit", "出典: サンプルチャンネル", "--no-review"])
-    srv = serve(wd, port=18765, open_browser=False)
+    srv = serve(wd, port=0, open_browser=False)
+    opened = []
+    srv.app.opener = opened.append
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
-        url = f"http://127.0.0.1:{srv.server_address[1]}/"
+        url = srv.start_url
         r = subprocess.run(["node", str(HERE / "ui_review.cjs"), url, str(tmp_path / "after.png")],
                            capture_output=True, text=True, timeout=600)
         assert r.returncode == 0, r.stderr
@@ -41,6 +44,9 @@ def test_review_flow(sample_video, tmp_path, monkeypatch):
     assert res["statuses"] == {"c01": "accepted", "c02": "accepted", "c03": "accepted", "c04": "pending", "c05": "rejected"}
     assert res["titles"]["c04"] == "朝5時起きを1か月続けた結果"
     assert "完了" in res["ptext"]
+    # 初回ガイド（AC3）と「フォルダを開く」（AC5）
+    assert len(res["guideSteps"]) == 4 and res["guideClosed"] and res["guideAfterReload"] and res["guideReopened"]
+    assert res["openVisible"] and opened and opened[0] == wd.resolve() / "out"
 
     dec = json.loads((wd / "decisions.json").read_text(encoding="utf-8"))   # 画面の操作がファイルに残っている
     assert dec["clips"]["c05"]["status"] == "rejected" and dec["clips"]["c04"]["title"] == "朝5時起きを1か月続けた結果"
