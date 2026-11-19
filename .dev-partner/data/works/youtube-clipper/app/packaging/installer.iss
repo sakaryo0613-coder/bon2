@@ -36,3 +36,11 @@ Name: "{autodesktop}\clipper"; Filename: "{app}\clipper.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\clipper.exe"; Description: "clipper を起動する"; Flags: nowait postinstall skipifsilent
+; アプリ内の更新（/UPDATE=1 で静かに上書き）のときだけ、最後にアプリを起動し直す（B-013）
+Filename: "{app}\clipper.exe"; Flags: nowait; Check: IsUpdate
+
+[Code]
+function IsUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;

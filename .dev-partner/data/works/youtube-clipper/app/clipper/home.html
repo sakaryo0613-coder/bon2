@@ -9,13 +9,21 @@
 @media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#f3f4f6;--sub:#9ca3af;--line:#2a2f38;--accent:#4ea1ff;--accent-bg:#13263d;--ok:#22c55e;--ng:#f87171;--ng-bg:#3a1515;--side:#14171c}}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI","Yu Gothic UI",Meiryo,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:grid;grid-template-rows:auto 1fr}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI","Yu Gothic UI",Meiryo,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;display:grid;grid-template-rows:auto auto 1fr}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px}
 button:disabled{opacity:.45;cursor:not-allowed}
 header{display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--card);border-bottom:1px solid var(--line)}
 header h1{font-size:17px;display:flex;align-items:center;gap:8px}
 .logo{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;display:grid;place-items:center;font-size:15px}
 header .sp{flex:1}
+.ver{font-size:12px;color:var(--sub);margin-left:-4px}
+.upd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 20px;background:var(--accent-bg);border-bottom:1px solid var(--line);font-size:14px}
+.upd[hidden]{display:none}
+.upd #upd-msg{flex:1;min-width:200px}
+.upd button{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;padding:6px 16px}
+.upd-bar{width:180px;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.upd-bar[hidden]{display:none}
+.upd-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .wrap{display:grid;grid-template-columns:250px 1fr;min-height:0}
 aside{background:var(--side);border-right:1px solid var(--line);padding:16px 12px;overflow:auto}
 aside h2{font-size:12px;color:var(--sub);font-weight:600;margin:4px 6px 8px;letter-spacing:.04em}
@@ -72,9 +80,14 @@ dialog .btns .p{background:var(--accent);border-color:var(--accent);color:#fff;f
 </head>
 <body>
 <header>
-  <h1><span class="logo">✂</span>clipper</h1><span class="sp"></span>
+  <h1><span class="logo">✂</span>clipper</h1><span class="ver" id="ver"></span><span class="sp"></span>
   <button id="settings" title="設定">⚙ 設定</button>
 </header>
+<div class="upd" id="upd" hidden role="status">
+  <span id="upd-msg"></span>
+  <span class="upd-bar" id="upd-bar" hidden><i id="upd-i"></i></span>
+  <button id="upd-go">更新する</button>
+</div>
 <div class="wrap">
   <aside>
     <h2>最近の作業</h2>
@@ -128,6 +141,40 @@ async function load() {
     : '<p class="empty">まだありません</p>';
   document.querySelectorAll('#recent .item').forEach(b => b.onclick = () => location.href = '/review?w=' + encodeURIComponent(b.dataset.w));
   if (h.jobs.length && !S.job) watch(h.jobs[0]);
+  $('ver').textContent = h.version && h.version !== 'dev' ? 'v' + h.version : '';
+}
+
+// アプリ内の更新（B-013）: 新しい版があればお知らせを出し、「更新する」でダウンロード → 上書き → 開き直す
+async function checkUpdate() {
+  try {
+    const u = await (await fetch('/api/update')).json();
+    if (!u.available) return;
+    $('upd').hidden = false;
+    $('upd-msg').textContent = `新しい版（v${u.latest}）があります。今の版は v${u.current} です。作業フォルダと設定はそのまま残ります。`;
+  } catch (e) { /* オフラインなどは何も出さない */ }
+}
+$('upd-go').onclick = async () => {
+  if (S.job && !S.job.done) { if (!confirm('候補づくりの途中です。更新するとやり直しになります。更新しますか？')) return; }
+  $('upd-go').disabled = true;
+  const r = await post('/api/update/apply');
+  if (!r.ok) { $('upd-msg').textContent = '更新を始められませんでした: ' + (r.error || ''); $('upd-go').disabled = false; return; }
+  $('upd-bar').hidden = false; pollUpdate();
+};
+async function pollUpdate() {
+  let s;
+  try { s = await (await fetch('/api/update/state')).json(); }
+  catch (e) { $('upd-msg').textContent = '更新しています。終わると新しい窓が開きます。この窓は閉じてかまいません。'; return; }
+  if (s.error) { $('upd-msg').textContent = '更新できませんでした（今の版のまま使えます）: ' + s.error; $('upd-bar').hidden = true; $('upd-go').disabled = false; $('upd-go').textContent = 'もう一度'; return; }
+  if (s.phase === 'download') {
+    const pct = s.total ? Math.round(100 * s.done / s.total) : 0;
+    $('upd-i').style.width = pct + '%'; $('upd-msg').textContent = `新しい版をダウンロードしています… ${pct}%`;
+  }
+  if (s.phase === 'install' || s.phase === 'restarting') {
+    $('upd-i').style.width = '100%'; $('upd-go').hidden = true;
+    $('upd-msg').textContent = '更新しています。終わると新しい窓が開きます（1分ほど）。この窓は閉じてかまいません。';
+    return;
+  }
+  setTimeout(pollUpdate, 700);
 }
 
 function setVideo(p) {
@@ -198,7 +245,7 @@ $('dlg-close').onclick = () => $('dlg').close();
 $('dlg-save').onclick = async () => { const k = $('key').value.trim(); if (k) await post('/api/config', {api_key: k}); $('key').value = ''; $('dlg').close(); load(); };
 
 setInterval(() => fetch('/api/ping', {method: 'POST'}).catch(() => {}), 10000);
-load();
+load().then(checkUpdate);
 </script>
 </body>
 </html>

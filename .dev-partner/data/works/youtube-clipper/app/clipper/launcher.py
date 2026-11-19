@@ -1,9 +1,10 @@
-"""アプリの入口（clipper.exe）。
+r"""アプリの入口（clipper.exe）。
 
   clipper.exe                     アプリを起動（サーバー＋ Edge のアプリウィンドウ）。2回目の起動は既存のアプリの窓を開くだけ
   clipper.exe --selftest <dir>    同梱物だけで「候補づくり → 書き出し → 形式の確認」まで通るか確認し、<dir>/selftest.json に結果を書く
               [--speech <wav>]     加えて、その音声を文字起こしできるか確認（英語・tiny モデル）
   clipper.exe --no-window         窓を開かずにサーバーだけ起動（確認用）
+  clipper.exe --update-now        新しい版があれば、すぐに更新する（確認用。結果は %LOCALAPPDATA%\clipper\clipper.log）
 """
 from __future__ import annotations
 
@@ -169,12 +170,25 @@ def main(argv=None) -> int:
     ap.add_argument("--no-window", action="store_true")
     ap.add_argument("--port", type=int, default=0)
     ap.add_argument("--idle", type=float, default=IDLE_TIMEOUT)
+    ap.add_argument("--update-now", action="store_true")
     a = ap.parse_args(argv)
     paths.setup_env()
     log = log_setup()
 
     if a.selftest:
         return selftest(Path(a.selftest), Path(a.speech) if a.speech else None)
+
+    if a.update_now:
+        from .updater import Updater
+        up = Updater(exit_fn=lambda: None)
+        info = up.check(force=True)
+        log.info("update-now: %s", info)
+        print(json.dumps(info, ensure_ascii=False), flush=True) if sys.stdout else None
+        if not info.get("available"):
+            return 3
+        up.apply(info, wait=True)
+        log.info("update-now result: %s", up.state)
+        return 0 if not up.state.get("error") else 1
 
     running = find_running()
     if running:
@@ -187,6 +201,12 @@ def main(argv=None) -> int:
     srv, app = serve_app(a.port, idle_timeout=a.idle)
     port = srv.server_address[1]
     write_lock(port)
+
+    def exit_for_update():   # 更新のインストーラーを起動した後: 起動情報を消して終了する
+        clear_lock(port)
+        log.info("exit for update")
+        os._exit(0)
+    app.updater.exit_fn = exit_for_update
     url = f"http://127.0.0.1:{port}/"
     log.info("start %s", url)
     print(url, flush=True) if sys.stdout else None
