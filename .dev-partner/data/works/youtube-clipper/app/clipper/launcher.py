@@ -139,6 +139,18 @@ def selftest(outdir: Path, speech: Path | None = None) -> int:
             text = " ".join(s["text"] for s in segs)
             check("whisper", len(segs) > 0 and any(s.get("words") for s in segs), text[:200])
             res["whisper_text"] = text
+            # 文字起こし → 文の分割 → 候補 → 保存 まで通す（B-004 の実機で、この組み合わせが壊れていた）
+            sv = outdir / "speech_source.mp4"
+            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi",
+                            "-i", "testsrc2=size=640x360:rate=30:duration=70", "-stream_loop", "-1", "-i", str(speech),
+                            "-map", "0:v", "-map", "1:a", "-t", "70", "-c:v", "libx264", "-preset", "ultrafast",
+                            "-c:a", "aac", str(sv)], check=True)
+            wd2 = build(sv, outdir / "speech.clipper", subs=None, scorer="rule", model="tiny", language="en",
+                        log=lambda *a: None)
+            s2 = wd2.read("sentences.json", [])
+            c2 = wd2.read("candidates.json", None)
+            check("whisper_pipeline", len(s2) > 0 and c2 is not None and (wd2.path / "decisions.json").exists(),
+                  f"{len(s2)} 文・候補 {len(c2 or [])} 件")
     except Exception as e:
         import traceback
         res["errors"].append(f"{type(e).__name__}: {e}")

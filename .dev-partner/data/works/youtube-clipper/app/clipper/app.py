@@ -141,9 +141,11 @@ class App:
                 build(vid, wdp, Path(subs) if subs else None, credit=credit, progress=progress, log=lambda *a: None)
                 job["workdir"] = self.register(wdp)
                 job["done"] = True
-            except Exception as e:  # 画面にそのまま出す
+            except Exception as e:  # 画面にそのまま出し、詳細はログに残す
                 job["error"] = f"{type(e).__name__}: {e}"
                 job["trace"] = traceback.format_exc()[-2000:]
+                import logging
+                logging.getLogger("clipper").error("job %s failed (%s): %s\n%s", jid, vid.name, job["error"], job["trace"])
         threading.Thread(target=run, daemon=True).start()
         return job
 
@@ -195,7 +197,7 @@ def make_handler(app: App):
                     return self._send(page("review.html"), "text/html; charset=utf-8")
                 if u.path == "/api/home":
                     cfg = paths.load_config()
-                    return self._json({"recent": app.recent(), "home": str(app.home),
+                    return self._json({"recent": app.recent(), "home": str(app.home), "log": str(paths.local_data_dir() / "clipper.log"),
                                        "config": {"credit": cfg.get("credit", ""), "has_api_key": bool(cfg.get("api_key") or os.environ.get("ANTHROPIC_API_KEY"))},
                                        "jobs": [j for j in app.jobs.values() if not j["done"] and not j["error"]]})
                 if parts[:2] == ["api", "jobs"] and len(parts) == 3:

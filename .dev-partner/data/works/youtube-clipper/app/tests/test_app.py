@@ -162,3 +162,23 @@ def test_cli_app_selftest_entry(env, tmp_path):
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
     res = json.loads((out / "selftest.json").read_text(encoding="utf-8"))
     assert res["ok"] and res["checks"]["format"]["ok"]
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node がない")
+def test_home_ui_shows_failure(env, tmp_path):
+    """失敗したら、アニメーションが止まり、失敗した段階が赤くなり、「もう一度試す」とログの場所が出る（B-004 の実機で「止まって見えた」件）。"""
+    bad = tmp_path / "not_a_video.mp4"
+    bad.write_text("これは動画ではありません", encoding="utf-8")
+    srv, app, port = start()
+    app.picker = lambda kind: str(bad)
+    try:
+        r = subprocess.run(["node", str(HERE / "ui_home_error.cjs"), f"http://127.0.0.1:{port}/"],
+                           capture_output=True, text=True, timeout=120)
+        assert r.returncode == 0, r.stderr
+        res = json.loads(r.stdout.strip().splitlines()[-1])
+    finally:
+        srv.shutdown()
+    assert res["errors"] == []
+    assert "うまくいきませんでした" in res["err"] and "clipper.log" in res["err"]
+    assert res["animating"] is False and res["failedStage"] and res["retry"] == "もう一度試す"
+    assert res["title"] == "候補づくりに失敗しました"

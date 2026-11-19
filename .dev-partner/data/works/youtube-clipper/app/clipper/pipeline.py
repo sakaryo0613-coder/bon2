@@ -36,7 +36,7 @@ def workdir_for(video: Path, base: Path) -> Path:
 
 def build(video: Path, workdir: Path, subs: Path | None = None, credit: str = "", scorer: str = "auto",
           model: str = "small", n: int | None = None, meta_extra: dict | None = None,
-          progress: Progress = _noop, log=print, download_root: Path | None = None) -> Workdir:
+          progress: Progress = _noop, log=print, download_root: Path | None = None, language: str = "ja") -> Workdir:
     t0 = time.time()
     video = Path(video).resolve()
     if not video.exists():
@@ -55,7 +55,8 @@ def build(video: Path, workdir: Path, subs: Path | None = None, credit: str = ""
     else:
         def tp(pct, msg):
             progress("transcribe" if pct >= 0 else "model", max(pct, 0), msg)
-        segs = transcribe_whisper(video, model, progress=tp, download_root=download_root, duration=meta["duration"])
+        segs = transcribe_whisper(video, model, progress=tp, download_root=download_root, duration=meta["duration"],
+                                  language=language)
     progress("transcribe", 100, "文字起こしが終わりました")
     wd.write("segments.json", segs)
     sents = to_sentences(segs)
