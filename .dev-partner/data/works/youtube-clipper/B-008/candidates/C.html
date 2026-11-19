@@ -1,32 +1,42 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:linear-gradient(135deg,#7c8bb3,#b7a4c9);color:#1d1d1f}
-.dmg{position:absolute;left:36px;top:36px;width:300px;height:190px;background:rgba(255,255,255,.92);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-around;padding:20px;font-size:13px;color:#555;text-align:center}
-.dmg .app{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#f97316);display:grid;place-items:center;color:#fff;font-size:30px;margin:0 auto 6px}
-.dmg .arrow{font-size:28px;color:#888}
-.dmg .fold{width:64px;height:54px;border-radius:8px;background:#93c5fd;margin:0 auto 6px}
-.cap{position:absolute;left:36px;top:236px;width:300px;color:#fff;font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.3)}
-.win{position:absolute;left:370px;top:36px;right:36px;bottom:70px;background:#fbfbfd;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden;display:grid;grid-template-rows:38px 1fr}
-.tb{background:#ececf0;display:flex;align-items:center;gap:7px;padding:0 12px;font-size:13px;color:#555;border-bottom:1px solid #dcdce2}
-.tb i{width:12px;height:12px;border-radius:50%;display:inline-block}
-.body{display:grid;grid-template-columns:210px 1fr}
-.sb{background:#f2f2f6;border-right:1px solid #e1e1e7;padding:16px 12px;font-size:13px;color:#555}
-.sb b{display:block;font-size:12px;color:#888;margin:4px 0 8px}
-.sb div{padding:7px 10px;border-radius:7px}.sb .on{background:#e1e1ea;color:#1d1d1f;font-weight:600}
-.mn{padding:34px 40px}
-.mn h1{font-size:26px;margin-bottom:6px}.mn p{color:#6e6e73;margin-bottom:22px}
-.drop{height:250px;border:2px dashed #c7c7d1;border-radius:16px;display:grid;place-items:center;text-align:center;color:#6e6e73;font-size:15px;background:#fff}
-.drop b{display:block;font-size:20px;color:#1d1d1f;margin:6px 0}
-.go{margin-top:18px;width:220px;margin-left:auto;background:#f97316;color:#fff;font-weight:800;text-align:center;border-radius:10px;padding:12px}
-.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;background:rgba(255,255,255,.4);border-radius:16px;padding:6px 10px;display:flex;gap:10px}
-.dock i{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.7);display:block}
-.dock .me{background:linear-gradient(135deg,#ef4444,#f97316)}
+body{width:1280px;height:800px;overflow:hidden;font-family:"Segoe UI","Yu Gothic UI","Meiryo","Noto Sans JP",sans-serif;background:linear-gradient(160deg,#1e3a8a,#3b82f6 55%,#93c5fd);color:#1b1b1b}
+.inst{position:absolute;left:30px;top:30px;width:330px;background:#fff;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.3);overflow:hidden;font-size:13px}
+.inst .tb{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:#f3f3f3;color:#333}
+.inst .bd{padding:16px 18px}
+.inst .ic{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;display:grid;place-items:center;font-size:24px;float:left;margin-right:12px}
+.inst b{font-size:15px}.inst p{color:#555;margin:4px 0 12px;clear:none}
+.inst .bar{clear:both;height:8px;background:#e5e5e5;border-radius:4px;overflow:hidden;margin-top:14px}.inst .bar i{display:block;width:70%;height:100%;background:#0067c0}
+.inst .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.inst .btns span{border:1px solid #ccc;border-radius:4px;padding:5px 14px}
+.inst .btns .p{background:#0067c0;color:#fff;border-color:#0067c0}
+.cap{position:absolute;left:30px;top:250px;width:330px;color:#fff;font-size:14px;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.cap b{display:block;font-size:15px}
+.win{position:absolute;left:390px;top:30px;right:30px;bottom:66px;background:#fafafa;border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden;display:grid;grid-template-rows:34px 1fr;border:1px solid #c9c9c9}
+.wt{display:flex;align-items:center;justify-content:space-between;padding-left:12px;background:#f3f3f3;font-size:13px;color:#333}
+.wt .ctl{display:flex}.wt .ctl span{width:46px;text-align:center;line-height:34px;font-size:14px}
+.body{display:grid;grid-template-columns:200px 1fr}
+.sb{background:#f0f0f0;border-right:1px solid #e0e0e0;padding:14px 10px;font-size:13px;color:#444}
+.sb b{display:block;font-size:12px;color:#888;margin:2px 0 8px}
+.sb div{padding:7px 10px;border-radius:5px}.sb .on{background:#e1e9f5;color:#0b3d91;font-weight:600}
+.mn{padding:30px 36px}
+.mn h1{font-size:24px;margin-bottom:6px;font-weight:700}.mn p{color:#666;margin-bottom:20px}
+.drop{height:240px;border:2px dashed #b8c4d6;border-radius:10px;display:grid;place-items:center;text-align:center;color:#666;font-size:15px;background:#fff}
+.drop b{display:block;font-size:20px;color:#1b1b1b;margin:6px 0}
+.row{display:flex;gap:12px;margin-top:14px}.f{flex:1;border:1px solid #d0d0d0;border-radius:6px;padding:8px 12px;font-size:13px;color:#888;background:#fff}
+.go{margin-top:16px;width:220px;margin-left:auto;background:#0067c0;color:#fff;font-weight:700;text-align:center;border-radius:6px;padding:11px}
+.task{position:absolute;left:0;right:0;bottom:0;height:48px;background:rgba(243,243,243,.92);display:flex;justify-content:center;align-items:center;gap:10px}
+.task i{width:34px;height:34px;border-radius:6px;background:#cfd8e3;display:block}
+.task .me{background:linear-gradient(135deg,#ef4444,#f97316);box-shadow:0 3px 0 -1px #0067c0}
 </style></head><body>
-<div class="dmg"><div><div class="app">✂</div>clipper.app</div><div class="arrow">→</div><div><div class="fold"></div>アプリケーション</div></div>
-<div class="cap">配られた「clipper.dmg」を開いて、アプリをドラッグするだけ。<br>ffmpeg などはアプリの中に入っている（約500MB）。</div>
-<div class="win"><div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>&nbsp; clipper</div>
+<div class="inst"><div class="tb"><span>clipper セットアップ</span><span>✕</span></div><div class="bd">
+ <div class="ic">✂</div><b>clipper をインストールしています</b><p>ffmpeg・文字起こしの部品も一緒に入ります（約500MB）</p>
+ <div class="bar"><i></i></div><div class="btns"><span>キャンセル</span><span class="p">次へ</span></div></div></div>
+<div class="cap"><b>配られた「clipper-setup.exe」を開くだけ</b>あとは「次へ」を押していけばインストール完了。スタート メニューとデスクトップにアイコンができます。<br>※ 署名なしの間は、初回に「Windows によって PC が保護されました」→「詳細情報」→「実行」が必要</div>
+<div class="win"><div class="wt"><span>✂ clipper</span><span class="ctl"><span>—</span><span>☐</span><span>✕</span></span></div>
  <div class="body"><div class="sb"><b>最近の作業</b><div class="on">＋ 新しい切り抜き</div><div>11/18 配信アーカイブ</div><div>11/11 配信アーカイブ</div></div>
- <div class="mn"><h1>新しい切り抜き</h1><p>普通のアプリと同じように、動画をウィンドウに入れるだけ。</p>
-  <div class="drop"><div>🎬<b>動画をここにドロップ</b>mp4 / mov / mkv</div></div><div class="go">候補を作る</div></div></div></div>
-<div class="dock"><i></i><i></i><i class="me"></i><i></i></div>
+ <div class="mn"><h1>新しい切り抜き</h1><p>動画をウィンドウに入れて「候補を作る」を押すだけ。終わるとレビュー画面に進みます。</p>
+  <div class="drop"><div>🎬<b>動画をここにドロップ</b>またはクリックして選ぶ（mp4 / mov / mkv）</div></div>
+  <div class="row"><div class="f">字幕ファイル（任意・あると速い）</div><div class="f">出典: ○○チャンネル</div></div>
+  <div class="go">候補を作る</div></div></div></div>
+<div class="task"><i></i><i></i><i class="me"></i><i></i><i></i></div>
 </body></html>
