@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>切り抜きツールを「コマンド入力なし」で使う方法 — 4案の比較</title><style>
+<title>切り抜きツールを「コマンド入力なし」で使う方法 — 4案の比較（回答を反映した版）</title><style>
 :root{--bg:#f5f4f0;--card:#fff;--ink:#1c1c1e;--sub:#5d5d63;--line:#e0ded7;--accent:#1f5eff;
 --rec:#c2410c;--rec-bg:#fff4ed;--chip:#efeee9;--shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05)}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#121214;--card:#1c1c20;--ink:#f1f1f3;
@@ -64,8 +64,8 @@ dialog iframe{border:0;display:block;background:#fff}
 .bar textarea{order:3;flex-basis:100%;height:40px}}
 </style></head>
 <body><div class="wrap">
-<header><h1>切り抜きツールを「コマンド入力なし」で使う方法 — 4案の比較</h1><p class="lead">B-008 / 手順2。各案の画面は「使う人が最初に見る画面」のイメージです（画面をクリックすると原寸）。どの案でも、レビュー画面には初回の使い方ガイド（再生 → 採否 → 伸縮 → 書き出し）を付けます。下のバーで選んで「選択をコピー」→ チャットに貼り付けてください。</p></header>
-<div class="ctx"><div class="box"><h2>前提・仮説</h2><ul><li>目的: ターミナルを使ったことがない人でも、動画を選ぶ → 候補 → 採否 → 縦型動画までたどり着ける</li><li>成功指標: コマンド入力0回（初回の準備も含む）、2回目からは3操作以内で候補づくりを開始できる、初回の準備は15分以内で放置してよい</li><li>現状: 起動に「python -m clipper run …」の入力が必要（L-008）</li></ul><p style="margin-top:8px;color:var(--sub);font-size:14px">比較軸: ①処理する場所（手元のPC ↔ クラウド）× ②始め方（自分で起動 ↔ Claude に頼む）</p></div><div class="box rec"><h2>推奨：案B「Claude に頼むだけ型」</h2><p>推奨は B です。非エンジニアがつまずくのは、ほとんどが初回の準備です（Python や ffmpeg のインストール、Mac の「開発元を確認できない」警告など）。Bでは Claude がその場で状況を見て準備し、エラーが出ても直してくれます。Aのスクリプトは、想定外の環境で止まるとユーザーには直せません。また、すでに Claude を日常的に使っているので、新しく覚える操作がありません。実装は最も小さく（2〜3時間）、Aは後から追加できます。スタッフにも渡すならC、PCに何も入れたくないならDが向きます。</p></div></div>
+<header><h1>切り抜きツールを「コマンド入力なし」で使う方法 — 4案の比較（回答を反映した版）</h1><p class="lead">B-008 / 手順2。質問への回答（Windows・スタッフに配布し、好評なら販売・Claude は使える）を反映して、推奨を B → C に見直しました。各案の画面は「使う人が最初に見る画面」のイメージです。下のバーで選んで「選択をコピー」→ チャットに貼り付けてください。</p></header>
+<div class="ctx"><div class="box"><h2>前提・仮説</h2><ul><li>目的: dev-partner の手順が正しく動くかのテストを兼ねて、ターミナルを使ったことがない人でも、動画を選ぶ → 候補 → 採否 → 縦型動画までたどり着けるようにする</li><li>回答: Windows ／ スタッフにも配る・好評なら販売 ／ Claude は使える</li><li>成功指標: コマンド入力0回（初回の準備も含む）、2回目からは3操作以内で候補づくりを開始できる、初回の準備は15分以内で放置してよい</li><li>Claude を持っていない人（スタッフ・購入者）も使える必要がある → 案B は配布に向かない</li></ul><p style="margin-top:8px;color:var(--sub);font-size:14px">比較軸: ①処理する場所（手元のPC ↔ クラウド）× ②始め方（自分で起動 ↔ Claude に頼む）</p></div><div class="box rec"><h2>推奨：案C「Windows アプリ型（インストーラーで配布）」</h2><p>推奨は C（Windows アプリ）に変わりました。スタッフに配って販売も視野に入れるなら、使う人が Claude を持っていなくても、普通のアプリとして入れて使えることが必要です（Bは配布できず、Aは初回の自動インストールが環境によって止まる）。Windows 用の .exe はこの開発環境（Linux）では作れませんが、GitHub の自動ビルド（Windows のサーバー）でインストーラーを作り、同じ場所で Windows 上の自動テストまで行えます。そのため「作ったものが Windows で動くか」をユーザーの手を借りずに確認でき、手順のテストとしても検証が完結します。月額課金のサービスとして売りたいなら D です。</p></div></div>
 <div class="grid">
 <article class="card" data-id="A" data-name="ダブルクリック起動＋自動セットアップ型">
   <div class="ch"><div class="cid">A</div><div class="cname">ダブルクリック起動＋自動セットアップ型</div></div>
@@ -95,9 +95,9 @@ h1{font-size:28px}.sub{color:#6b7080;margin:4px 0 20px}
 .f em{display:block;font-style:normal;font-size:12px;color:#6b7080;margin-bottom:2px}
 .go{margin-top:20px;background:#4f46e5;color:#fff;font-weight:800;font-size:20px;text-align:center;border-radius:12px;padding:16px}
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;div class=&quot;finder&quot;&gt;&lt;div class=&quot;fbar&quot;&gt;&lt;i style=&quot;background:#ff5f57&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:#febc2e&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:#28c840&quot;&gt;&lt;/i&gt;&amp;nbsp;clipper&lt;/div&gt;
- &lt;div class=&quot;files&quot;&gt;&lt;div class=&quot;hit&quot;&gt;&lt;div class=&quot;ic&quot;&gt;▶&lt;/div&gt;はじめる&lt;/div&gt;&lt;div&gt;&lt;div class=&quot;ic&quot;&gt;📁&lt;/div&gt;作業フォルダ&lt;/div&gt;&lt;div&gt;&lt;div class=&quot;ic&quot;&gt;📄&lt;/div&gt;説明.pdf&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;div class=&quot;tip&quot;&gt;&lt;b&gt;① 「はじめる」をダブルクリック&lt;/b&gt;&lt;br&gt;初回だけ、必要なものを自動でインストールします（約10分・放置でOK）。2回目からはすぐ開きます。&lt;/div&gt;
+&lt;div class=&quot;finder&quot;&gt;&lt;div class=&quot;fbar&quot;&gt;📁 エクスプローラー — clipper&lt;/div&gt;
+ &lt;div class=&quot;files&quot;&gt;&lt;div class=&quot;hit&quot;&gt;&lt;div class=&quot;ic&quot;&gt;▶&lt;/div&gt;はじめる.bat&lt;/div&gt;&lt;div&gt;&lt;div class=&quot;ic&quot;&gt;📁&lt;/div&gt;作業フォルダ&lt;/div&gt;&lt;div&gt;&lt;div class=&quot;ic&quot;&gt;📄&lt;/div&gt;説明.pdf&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;tip&quot;&gt;&lt;b&gt;① 「はじめる」をダブルクリック&lt;/b&gt;&lt;br&gt;初回だけ、必要なもの（Python・ffmpeg）を winget で自動インストールします（約10分・放置でOK）。2回目からはすぐ開きます。&lt;/div&gt;
 &lt;div class=&quot;win&quot;&gt;&lt;div class=&quot;url&quot;&gt;127.0.0.1:8765/はじめる&lt;/div&gt;&lt;div class=&quot;in&quot;&gt;
  &lt;h1&gt;切り抜きを作る&lt;/h1&gt;&lt;p class=&quot;sub&quot;&gt;動画を選んで「候補を作る」を押すだけ。終わるとレビュー画面に進みます。&lt;/p&gt;
  &lt;div class=&quot;steps&quot;&gt;&lt;span class=&quot;on&quot;&gt;② 動画を選ぶ&lt;/span&gt;&lt;span&gt;③ 候補を作る（約20分）&lt;/span&gt;&lt;span&gt;④ レビューして書き出す&lt;/span&gt;&lt;/div&gt;
@@ -107,12 +107,12 @@ h1{font-size:28px}.sub{color:#6b7080;margin:4px 0 20px}
 &lt;/div&gt;&lt;/div&gt;
 &lt;/body&gt;&lt;/html&gt;
 " title="案A"></iframe></div>
-  <dl><dt>狙い</dt><dd>フォルダの「はじめる」をダブルクリック → 初回だけ必要なものを自動でインストール → ブラウザの画面で動画をドラッグして「候補を作る」</dd><dt>向くケース</dt><dd>Claude を使わずに単体で動かしたい。動画を手元から出したくない</dd><dt>弱点</dt><dd>初回の自動インストールが環境によって止まることがあり（Mac の警告、ffmpeg の入手など）、止まったときにユーザーは直せない。Mac と Windows で起動ファイルを別々に用意する必要がある</dd><dt>規模</dt><dd>半日〜1日（工数2）</dd></dl>
+  <dl><dt>狙い</dt><dd>フォルダの「はじめる」をダブルクリック → 初回だけ必要なものを自動でインストール → ブラウザの画面で動画をドラッグして「候補を作る」</dd><dt>向くケース</dt><dd>Claude を使わずに、自分のPCで手早く単体で動かしたい（配布はしない）</dd><dt>弱点</dt><dd>初回の自動インストール（winget で Python と ffmpeg）が環境や権限によって止まり、止まったときにユーザーは直せない。配布はZIPで渡すことになり、販売には向かない</dd><dt>規模</dt><dd>半日〜1日（工数2）</dd></dl>
   <div class="tags"><span>処理: 手元のPC</span><span>始め方: ダブルクリック</span><span>費用: 無料</span></div>
   <div class="pick"><label><input type="radio" name="pick" value="A">この案にする</label></div>
 </article>
-<article class="card is-rec" data-id="B" data-name="Claude に頼むだけ型">
-  <div class="ch"><div class="cid">B</div><div class="cname">Claude に頼むだけ型</div><span class="badge">推奨</span></div>
+<article class="card" data-id="B" data-name="Claude に頼むだけ型">
+  <div class="ch"><div class="cid">B</div><div class="cname">Claude に頼むだけ型</div></div>
   <div class="frame" data-title="案B「Claude に頼むだけ型」" title="クリックで原寸表示" style="aspect-ratio:1280/800"><iframe loading="lazy" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;ja&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;style&gt;
 *{box-sizing:border-box;margin:0;padding:0}
 body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,&quot;Hiragino Sans&quot;,&quot;Noto Sans JP&quot;,sans-serif;background:#f6f3ee;color:#2b2622}
@@ -144,47 +144,57 @@ body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,&quot;H
 &lt;div class=&quot;box&quot;&gt;「今週の配信も同じように」「字幕をもっと大きく」なども、話しかけるだけでOK&lt;/div&gt;
 &lt;/body&gt;&lt;/html&gt;
 " title="案B"></iframe></div>
-  <dl><dt>狙い</dt><dd>「この動画を切り抜いて」と話しかけるだけ。準備・実行・レビュー画面を開くところまで Claude がやり、書き出し後の確認や「字幕を大きく」などの調整も会話で済む</dd><dt>向くケース</dt><dd>普段から Claude（Claude Code / Cowork）を使っている人。初回の準備でつまずきたくない人</dd><dt>弱点</dt><dd>PCで Claude Code か Cowork を使えることが前提。Claude なしでは他の人に渡しにくい</dd><dt>規模</dt><dd>2〜3時間（工数1）</dd></dl>
+  <dl><dt>狙い</dt><dd>「この動画を切り抜いて」と話しかけるだけ。準備・実行・レビュー画面を開くところまで Claude がやり、書き出し後の確認や「字幕を大きく」などの調整も会話で済む</dd><dt>向くケース</dt><dd>普段から Claude（Claude Code / Cowork）を使っている人。初回の準備でつまずきたくない人</dd><dt>弱点</dt><dd>使う人全員が Claude Code か Cowork を使える必要がある。スタッフや購入者に配れない（今回の回答では不向き）</dd><dt>規模</dt><dd>2〜3時間（工数1）</dd></dl>
   <div class="tags"><span>処理: 手元のPC</span><span>始め方: Claude に頼む</span><span>費用: 無料（Claude の利用枠内）</span></div>
   <div class="pick"><label><input type="radio" name="pick" value="B">この案にする</label></div>
 </article>
-<article class="card" data-id="C" data-name="デスクトップアプリ型">
-  <div class="ch"><div class="cid">C</div><div class="cname">デスクトップアプリ型</div></div>
-  <div class="frame" data-title="案C「デスクトップアプリ型」" title="クリックで原寸表示" style="aspect-ratio:1280/800"><iframe loading="lazy" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;ja&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;style&gt;
+<article class="card is-rec" data-id="C" data-name="Windows アプリ型（インストーラーで配布）">
+  <div class="ch"><div class="cid">C</div><div class="cname">Windows アプリ型（インストーラーで配布）</div><span class="badge">推奨</span></div>
+  <div class="frame" data-title="案C「Windows アプリ型（インストーラーで配布）」" title="クリックで原寸表示" style="aspect-ratio:1280/800"><iframe loading="lazy" srcdoc="&lt;!doctype html&gt;&lt;html lang=&quot;ja&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;style&gt;
 *{box-sizing:border-box;margin:0;padding:0}
-body{width:1280px;height:800px;overflow:hidden;font-family:-apple-system,&quot;Hiragino Sans&quot;,&quot;Noto Sans JP&quot;,sans-serif;background:linear-gradient(135deg,#7c8bb3,#b7a4c9);color:#1d1d1f}
-.dmg{position:absolute;left:36px;top:36px;width:300px;height:190px;background:rgba(255,255,255,.92);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-around;padding:20px;font-size:13px;color:#555;text-align:center}
-.dmg .app{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#ef4444,#f97316);display:grid;place-items:center;color:#fff;font-size:30px;margin:0 auto 6px}
-.dmg .arrow{font-size:28px;color:#888}
-.dmg .fold{width:64px;height:54px;border-radius:8px;background:#93c5fd;margin:0 auto 6px}
-.cap{position:absolute;left:36px;top:236px;width:300px;color:#fff;font-size:14px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,.3)}
-.win{position:absolute;left:370px;top:36px;right:36px;bottom:70px;background:#fbfbfd;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.3);overflow:hidden;display:grid;grid-template-rows:38px 1fr}
-.tb{background:#ececf0;display:flex;align-items:center;gap:7px;padding:0 12px;font-size:13px;color:#555;border-bottom:1px solid #dcdce2}
-.tb i{width:12px;height:12px;border-radius:50%;display:inline-block}
-.body{display:grid;grid-template-columns:210px 1fr}
-.sb{background:#f2f2f6;border-right:1px solid #e1e1e7;padding:16px 12px;font-size:13px;color:#555}
-.sb b{display:block;font-size:12px;color:#888;margin:4px 0 8px}
-.sb div{padding:7px 10px;border-radius:7px}.sb .on{background:#e1e1ea;color:#1d1d1f;font-weight:600}
-.mn{padding:34px 40px}
-.mn h1{font-size:26px;margin-bottom:6px}.mn p{color:#6e6e73;margin-bottom:22px}
-.drop{height:250px;border:2px dashed #c7c7d1;border-radius:16px;display:grid;place-items:center;text-align:center;color:#6e6e73;font-size:15px;background:#fff}
-.drop b{display:block;font-size:20px;color:#1d1d1f;margin:6px 0}
-.go{margin-top:18px;width:220px;margin-left:auto;background:#f97316;color:#fff;font-weight:800;text-align:center;border-radius:10px;padding:12px}
-.dock{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;background:rgba(255,255,255,.4);border-radius:16px;padding:6px 10px;display:flex;gap:10px}
-.dock i{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.7);display:block}
-.dock .me{background:linear-gradient(135deg,#ef4444,#f97316)}
+body{width:1280px;height:800px;overflow:hidden;font-family:&quot;Segoe UI&quot;,&quot;Yu Gothic UI&quot;,&quot;Meiryo&quot;,&quot;Noto Sans JP&quot;,sans-serif;background:linear-gradient(160deg,#1e3a8a,#3b82f6 55%,#93c5fd);color:#1b1b1b}
+.inst{position:absolute;left:30px;top:30px;width:330px;background:#fff;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.3);overflow:hidden;font-size:13px}
+.inst .tb{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:#f3f3f3;color:#333}
+.inst .bd{padding:16px 18px}
+.inst .ic{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;display:grid;place-items:center;font-size:24px;float:left;margin-right:12px}
+.inst b{font-size:15px}.inst p{color:#555;margin:4px 0 12px;clear:none}
+.inst .bar{clear:both;height:8px;background:#e5e5e5;border-radius:4px;overflow:hidden;margin-top:14px}.inst .bar i{display:block;width:70%;height:100%;background:#0067c0}
+.inst .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.inst .btns span{border:1px solid #ccc;border-radius:4px;padding:5px 14px}
+.inst .btns .p{background:#0067c0;color:#fff;border-color:#0067c0}
+.cap{position:absolute;left:30px;top:250px;width:330px;color:#fff;font-size:14px;line-height:1.7;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.cap b{display:block;font-size:15px}
+.win{position:absolute;left:390px;top:30px;right:30px;bottom:66px;background:#fafafa;border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden;display:grid;grid-template-rows:34px 1fr;border:1px solid #c9c9c9}
+.wt{display:flex;align-items:center;justify-content:space-between;padding-left:12px;background:#f3f3f3;font-size:13px;color:#333}
+.wt .ctl{display:flex}.wt .ctl span{width:46px;text-align:center;line-height:34px;font-size:14px}
+.body{display:grid;grid-template-columns:200px 1fr}
+.sb{background:#f0f0f0;border-right:1px solid #e0e0e0;padding:14px 10px;font-size:13px;color:#444}
+.sb b{display:block;font-size:12px;color:#888;margin:2px 0 8px}
+.sb div{padding:7px 10px;border-radius:5px}.sb .on{background:#e1e9f5;color:#0b3d91;font-weight:600}
+.mn{padding:30px 36px}
+.mn h1{font-size:24px;margin-bottom:6px;font-weight:700}.mn p{color:#666;margin-bottom:20px}
+.drop{height:240px;border:2px dashed #b8c4d6;border-radius:10px;display:grid;place-items:center;text-align:center;color:#666;font-size:15px;background:#fff}
+.drop b{display:block;font-size:20px;color:#1b1b1b;margin:6px 0}
+.row{display:flex;gap:12px;margin-top:14px}.f{flex:1;border:1px solid #d0d0d0;border-radius:6px;padding:8px 12px;font-size:13px;color:#888;background:#fff}
+.go{margin-top:16px;width:220px;margin-left:auto;background:#0067c0;color:#fff;font-weight:700;text-align:center;border-radius:6px;padding:11px}
+.task{position:absolute;left:0;right:0;bottom:0;height:48px;background:rgba(243,243,243,.92);display:flex;justify-content:center;align-items:center;gap:10px}
+.task i{width:34px;height:34px;border-radius:6px;background:#cfd8e3;display:block}
+.task .me{background:linear-gradient(135deg,#ef4444,#f97316);box-shadow:0 3px 0 -1px #0067c0}
 &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-&lt;div class=&quot;dmg&quot;&gt;&lt;div&gt;&lt;div class=&quot;app&quot;&gt;✂&lt;/div&gt;clipper.app&lt;/div&gt;&lt;div class=&quot;arrow&quot;&gt;→&lt;/div&gt;&lt;div&gt;&lt;div class=&quot;fold&quot;&gt;&lt;/div&gt;アプリケーション&lt;/div&gt;&lt;/div&gt;
-&lt;div class=&quot;cap&quot;&gt;配られた「clipper.dmg」を開いて、アプリをドラッグするだけ。&lt;br&gt;ffmpeg などはアプリの中に入っている（約500MB）。&lt;/div&gt;
-&lt;div class=&quot;win&quot;&gt;&lt;div class=&quot;tb&quot;&gt;&lt;i style=&quot;background:#ff5f57&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:#febc2e&quot;&gt;&lt;/i&gt;&lt;i style=&quot;background:#28c840&quot;&gt;&lt;/i&gt;&amp;nbsp; clipper&lt;/div&gt;
+&lt;div class=&quot;inst&quot;&gt;&lt;div class=&quot;tb&quot;&gt;&lt;span&gt;clipper セットアップ&lt;/span&gt;&lt;span&gt;✕&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;bd&quot;&gt;
+ &lt;div class=&quot;ic&quot;&gt;✂&lt;/div&gt;&lt;b&gt;clipper をインストールしています&lt;/b&gt;&lt;p&gt;ffmpeg・文字起こしの部品も一緒に入ります（約500MB）&lt;/p&gt;
+ &lt;div class=&quot;bar&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;btns&quot;&gt;&lt;span&gt;キャンセル&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;次へ&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;cap&quot;&gt;&lt;b&gt;配られた「clipper-setup.exe」を開くだけ&lt;/b&gt;あとは「次へ」を押していけばインストール完了。スタート メニューとデスクトップにアイコンができます。&lt;br&gt;※ 署名なしの間は、初回に「Windows によって PC が保護されました」→「詳細情報」→「実行」が必要&lt;/div&gt;
+&lt;div class=&quot;win&quot;&gt;&lt;div class=&quot;wt&quot;&gt;&lt;span&gt;✂ clipper&lt;/span&gt;&lt;span class=&quot;ctl&quot;&gt;&lt;span&gt;—&lt;/span&gt;&lt;span&gt;☐&lt;/span&gt;&lt;span&gt;✕&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;
  &lt;div class=&quot;body&quot;&gt;&lt;div class=&quot;sb&quot;&gt;&lt;b&gt;最近の作業&lt;/b&gt;&lt;div class=&quot;on&quot;&gt;＋ 新しい切り抜き&lt;/div&gt;&lt;div&gt;11/18 配信アーカイブ&lt;/div&gt;&lt;div&gt;11/11 配信アーカイブ&lt;/div&gt;&lt;/div&gt;
- &lt;div class=&quot;mn&quot;&gt;&lt;h1&gt;新しい切り抜き&lt;/h1&gt;&lt;p&gt;普通のアプリと同じように、動画をウィンドウに入れるだけ。&lt;/p&gt;
-  &lt;div class=&quot;drop&quot;&gt;&lt;div&gt;🎬&lt;b&gt;動画をここにドロップ&lt;/b&gt;mp4 / mov / mkv&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;go&quot;&gt;候補を作る&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;div class=&quot;dock&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i class=&quot;me&quot;&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
+ &lt;div class=&quot;mn&quot;&gt;&lt;h1&gt;新しい切り抜き&lt;/h1&gt;&lt;p&gt;動画をウィンドウに入れて「候補を作る」を押すだけ。終わるとレビュー画面に進みます。&lt;/p&gt;
+  &lt;div class=&quot;drop&quot;&gt;&lt;div&gt;🎬&lt;b&gt;動画をここにドロップ&lt;/b&gt;またはクリックして選ぶ（mp4 / mov / mkv）&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;div class=&quot;f&quot;&gt;字幕ファイル（任意・あると速い）&lt;/div&gt;&lt;div class=&quot;f&quot;&gt;出典: ○○チャンネル&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;go&quot;&gt;候補を作る&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;task&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i class=&quot;me&quot;&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;
 &lt;/body&gt;&lt;/html&gt;
 " title="案C"></iframe></div>
-  <dl><dt>狙い</dt><dd>ffmpeg などを同梱した普通のアプリ（.app / .exe）にする。インストールはドラッグするだけ</dd><dt>向くケース</dt><dd>スタッフや知人にも配りたい。Claude を使わない人にも渡したい</dd><dt>弱点</dt><dd>作るのが重い（OSごとにビルドし、警告を出さないための署名も必要）。サイズは約500MB。更新のたびに配り直しが必要</dd><dt>規模</dt><dd>2〜3日＋署名の準備（工数4）</dd></dl>
-  <div class="tags"><span>処理: 手元のPC</span><span>始め方: アプリを開く</span><span>費用: Apple の開発者登録 年1.2万円程度</span></div>
+  <dl><dt>狙い</dt><dd>ffmpeg・文字起こしの部品を同梱した Windows アプリ。インストーラー（clipper-setup.exe）を開いて「次へ」を押すだけ。動画をウィンドウに入れて「候補を作る」</dd><dt>向くケース</dt><dd>スタッフに配りたい。好評なら販売したい。Claude を持っていない人にも使ってほしい</dd><dt>弱点</dt><dd>作るのが重い。署名がない間は、初回に「Windows によって PC が保護されました」が出る（スタッフなら回避手順で可、販売前に証明書が必要: 年2〜6万円程度）。サイズは約500MB。販売するなら同梱する ffmpeg のライセンス（GPL）への対応が必要</dd><dt>規模</dt><dd>2〜3日（工数4）。販売前の署名・ライセンス対応は別途</dd></dl>
+  <div class="tags"><span>処理: 手元のPC</span><span>始め方: アプリを開く</span><span>配布: インストーラー</span><span>テスト: Windows 上で自動</span></div>
   <div class="pick"><label><input type="radio" name="pick" value="C">この案にする</label></div>
 </article>
 <article class="card" data-id="D" data-name="クラウド版（ブラウザだけ）">
@@ -230,11 +240,11 @@ h1{font-size:26px}.sub{color:#94a3b8;margin:4px 0 22px}
 &lt;div class=&quot;cap&quot;&gt;採否はスマホからでもできる&lt;/div&gt;
 &lt;/body&gt;&lt;/html&gt;
 " title="案D"></iframe></div>
-  <dl><dt>狙い</dt><dd>PCに何も入れない。専用ページに動画をアップロードするとクラウドで処理され、採否はスマホからもできる</dd><dt>向くケース</dt><dd>PCに何もインストールしたくない。外出先やスマホで採否を決めたい。複数人で使う</dd><dt>弱点</dt><dd>サーバー代が月2,000〜5,000円かかる。60分の動画（数GB）のアップロードに時間がかかる。動画を外部に置くことになり、運用（障害対応・削除）も必要</dd><dt>規模</dt><dd>3〜5日（工数5）</dd></dl>
+  <dl><dt>狙い</dt><dd>PCに何も入れない。専用ページに動画をアップロードするとクラウドで処理され、採否はスマホからもできる</dd><dt>向くケース</dt><dd>月額課金のサービスとして売りたい。PCに何も入れたくない。スマホで採否を決めたい</dd><dt>弱点</dt><dd>サーバー代が月2,000〜5,000円かかる。60分の動画（数GB）のアップロードに時間がかかる。動画を外部に置くことになり、運用（障害対応・削除）も必要</dd><dt>規模</dt><dd>3〜5日（工数5）</dd></dl>
   <div class="tags"><span>処理: クラウド</span><span>始め方: ブラウザ</span><span>費用: 月額あり</span></div>
   <div class="pick"><label><input type="radio" name="pick" value="D">この案にする</label></div>
 </article></div>
-<section class="qs"><h2>確認したいこと（最大3つ・答えられる分だけ）</h2><div class="q box" data-id="Q1" data-label="PC"><div class="qt">Q1. お使いのPCは？</div><div class="hy">仮説（未回答ならこれで進めます）: Mac（Windows も同じ仕組みで後から対応）</div><div class="opts"><label><input type="radio" name="Q1" value="Mac">Mac</label><label><input type="radio" name="Q1" value="Windows">Windows</label><label><input type="radio" name="Q1" value="両方">両方</label></div></div><div class="q box" data-id="Q2" data-label="使う人"><div class="qt">Q2. このツールを使うのは誰？</div><div class="hy">仮説（未回答ならこれで進めます）: 自分だけ</div><div class="opts"><label><input type="radio" name="Q2" value="自分だけ">自分だけ</label><label><input type="radio" name="Q2" value="スタッフにも渡したい">スタッフにも渡したい</label></div></div><div class="q box" data-id="Q3" data-label="Claude"><div class="qt">Q3. PCで Claude（Claude Code または Cowork）を使える？</div><div class="hy">仮説（未回答ならこれで進めます）: 使える</div><div class="opts"><label><input type="radio" name="Q3" value="使える">使える</label><label><input type="radio" name="Q3" value="使えない・分からない">使えない・分からない</label></div></div></section><section class="ifa"><h2>回答次第で推奨はこう変わる</h2><table><tr><th>回答</th><th>推奨</th></tr><tr><td>Q3 = 使えない・分からない</td><td>A（ダブルクリック起動）。初回の準備でつまずいたときの手順書も付ける</td></tr><tr><td>Q2 = スタッフにも渡したい</td><td>C（アプリにして配る）。スマホで採否まで済ませたいなら D</td></tr><tr><td>Q1 = Windows</td><td>推奨は B のまま（Windows 用の準備も Claude が行う）。A の場合は起動ファイルを .bat で作る</td></tr></table></section>
+<section class="ifa"><h2>回答次第で推奨はこう変わる</h2><table><tr><th>回答</th><th>推奨</th></tr><tr><td>まず自分だけで、最短で試したい</td><td>B（2〜3時間。配布はできない）</td></tr><tr><td>月額課金のサービスとして売りたい</td><td>D（サーバー代と運用が必要）</td></tr><tr><td>配布せず、Claude も使わずに単体で動かしたい</td><td>A</td></tr></table></section>
 </div>
 <div class="bar"><div class="in"><div class="sel" id="sel"></div>
 <textarea id="memo" placeholder="補足（任意）: 例) 店のInstagram用にも使いたい"></textarea>
